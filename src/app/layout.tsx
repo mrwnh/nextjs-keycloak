@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Providers } from './Providers'
 import SessionGuard from '@/components/SessionGuard'
+import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -17,13 +19,17 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <Providers>
-          <SessionGuard>
-            {children}
-          </SessionGuard>
-        </Providers>
+    <html lang="en" suppressHydrationWarning>
+      <head />
+      <body>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <Providers>
+            <SessionGuard>
+              {children}
+            </SessionGuard>
+          </Providers>
+        </ThemeProvider>
+        <Toaster />
       </body>
     </html>
   )
