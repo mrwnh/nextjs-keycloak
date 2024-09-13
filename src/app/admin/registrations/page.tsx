@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from "next-auth/react"
 import { useRouter } from 'next/navigation'
-import { columns } from "./columns/page"
-import { DataTable } from "./data-table/page"
+import { columns } from "./columns"
+import { DataTable } from "./data-table"
 import { useToast } from "@/hooks/use-toast"
 import { Slideover } from "@/components/Slideover"
 import { type Registration } from "@/types/registration";
