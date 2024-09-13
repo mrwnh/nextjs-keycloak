@@ -39,6 +39,8 @@ export async function POST(req: Request) {
       data: {
         ...data,
         status: 'pending',
+        paymentStatus: 'unpaid',
+        imageUrl: data.imageUrl || null,
       },
     });
 

@@ -21,6 +21,9 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { useState } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User } from "lucide-react";
 
 const formSchema = z.object({
   registrationType: z.enum(["Sponsor", "Speaker", "Media", "Visitor"]),
@@ -31,6 +34,7 @@ const formSchema = z.object({
   company: z.string().min(2, "Company name must be at least 2 characters."),
   designation: z.string().min(2, "Designation must be at least 2 characters."),
   city: z.string().min(2, "City must be at least 2 characters."),
+  imageUrl: z.string().optional(),
 });
 
 type RegistrationFormProps = {
@@ -40,6 +44,7 @@ type RegistrationFormProps = {
 };
 
 export function RegistrationForm({ initialData, onSubmit, isEmailDisabled = false }: RegistrationFormProps) {
+  const [isUploading, setIsUploading] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
@@ -51,12 +56,41 @@ export function RegistrationForm({ initialData, onSubmit, isEmailDisabled = fals
       company: "",
       designation: "",
       city: "",
+      imageUrl: "",
     },
   });
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const { url } = await res.json();
+      form.setValue('imageUrl', url);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form id="registration-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="registrationType"
@@ -176,7 +210,35 @@ export function RegistrationForm({ initialData, onSubmit, isEmailDisabled = fals
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full">Submit</Button>
+        <FormField
+          control={form.control}
+          name="imageUrl"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Profile Picture</FormLabel>
+              <FormControl>
+                <div className="flex items-center space-x-4">
+                  <Avatar className="w-20 h-20">
+                    <AvatarImage src={field.value} alt="Profile" />
+                    <AvatarFallback>
+                      <User className="w-10 h-10" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={isUploading}
+                  />
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" disabled={isUploading}>
+          {isUploading ? 'Uploading...' : isEmailDisabled ? 'Save Changes' : 'Register'}
+        </Button>
       </form>
     </Form>
   );

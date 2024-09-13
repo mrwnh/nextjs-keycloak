@@ -16,18 +16,18 @@ export async function POST(req: Request) {
 
   try {
     const updatedRegistration = await prisma.registration.update({
-      where: { email: session.user.email },
-      data: {
-        registrationType: data.registrationType,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        mobileNumber: data.mobileNumber,
-        company: data.company,
-        designation: data.designation,
-        city: data.city,
-        // Remove the status field from here
-      },
-    });
+        where: { email: session.user.email },
+        data: {
+          registrationType: data.registrationType,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phoneNumber: data.phoneNumber, 
+          company: data.company,
+          designation: data.designation,
+          city: data.city,
+          imageUrl: data.imageUrl,
+        },
+      });
 
     return NextResponse.json(updatedRegistration);
   } catch (error) {

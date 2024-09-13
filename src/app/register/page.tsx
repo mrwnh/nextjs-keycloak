@@ -3,23 +3,22 @@
 import { useSession } from "next-auth/react";
 import { SetStateAction, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
 import RegistrationCard from "@/components/RegistrationCard";
 import { RegistrationForm } from "@/components/form";
+import { RegistrationFormSkeleton } from "@/components/register-skeleton";
 
 export default function Register() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [registration, setRegistration] = useState(null);
-  const { theme, setTheme } = useTheme();
   const [isRTL, setIsRTL] = useState(false);
 
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
+    if (status === "unauthenticated") {
+      router.push("/api/auth/signin?callbackUrl=/register");
+    } else if (status === "authenticated" && session?.user) {
       const [firstName, ...lastNameParts] = (session.user.name || "").split(" ");
       const initialData = {
         registrationType: "Visitor",
@@ -27,6 +26,7 @@ export default function Register() {
         lastName: lastNameParts.join(" "),
         email: session.user.email || "",
         phoneNumber: "",
+        imageUrl: "",
         company: "",
         designation: "",
         city: "",
@@ -47,7 +47,7 @@ export default function Register() {
         })
         .catch(error => console.error('Error checking registration:', error));
     }
-  }, [status, session]);
+  }, [status, session, router]);
 
   const formSchema = z.object({
     registrationType: z.string(),
@@ -55,6 +55,7 @@ export default function Register() {
     lastName: z.string(),
     email: z.string().email(),
     phoneNumber: z.string(),
+    imageUrl: z.string().optional(),
     company: z.string(),
     designation: z.string(),
     city: z.string(),
@@ -72,7 +73,7 @@ export default function Register() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(values), // This now includes the imageUrl
       });
 
       if (response.ok) {
@@ -86,67 +87,40 @@ export default function Register() {
     }
   };
 
-  if (status === "loading") {
-    return <div className="flex justify-center items-center h-screen">Loading...</div>;
-  }
-
-  if (status !== "authenticated") {
-    router.push("/api/auth/signin");
-    return null;
-  }
-
-  if (registration) {
-    return (
-      <div className={`container mx-auto p-4 ${isRTL ? 'rtl' : 'ltr'}`}>
-        <RegistrationCard 
-          registration={registration} 
-          onUpdate={(updatedRegistration: SetStateAction<null>) => setRegistration(updatedRegistration)}
-        />
-      </div>
-    );
-  }
-
   return (
     <div className={`container mx-auto p-4 ${isRTL ? 'rtl' : 'ltr'}`}>
-      <Card className="w-full max-w-2xl mx-auto">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-2xl font-bold">Register for Event</CardTitle>
-          <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-            >
-              <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Toggle theme</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsRTL(!isRTL)}
-            >
-              {isRTL ? "LTR" : "RTL"}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <RegistrationForm
-            initialData={{
-              registrationType: "Visitor",
-              firstName: session?.user?.name?.split(" ")[0] || "",
-              lastName: session?.user?.name?.split(" ").slice(1).join(" ") || "",
-              email: session?.user?.email || "",
-              phoneNumber: "",
-              company: "",
-              designation: "",
-              city: "",
-            }}
-            onSubmit={onSubmit}
-            isEmailDisabled={true}
-          />
-        </CardContent>
-      </Card>
+      {status === "loading" ? (
+        <RegistrationFormSkeleton />
+      ) : status === "unauthenticated" ? (
+        null // The useEffect will handle redirection
+      ) : registration ? (
+        <RegistrationCard 
+          registration={registration} 
+          onUpdate={(updatedRegistration) => setRegistration(updatedRegistration)}
+        />
+      ) : (
+        <Card className="w-full max-w-2xl mx-auto">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-2xl font-bold">Register for RFF 2025</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RegistrationForm
+              initialData={{
+                registrationType: "Visitor",
+                firstName: session?.user?.name?.split(" ")[0] || "",
+                lastName: session?.user?.name?.split(" ").slice(1).join(" ") || "",
+                email: session?.user?.email || "",
+                phoneNumber: "",
+                company: "",
+                designation: "",
+                city: "",
+              }}
+              onSubmit={onSubmit}
+              isEmailDisabled={true}
+            />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

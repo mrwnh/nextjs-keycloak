@@ -4,21 +4,38 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
-  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+  url = env("POSTGRES_PRISMA_URL") 
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 model Registration {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   registrationType  String
   firstName         String
   lastName          String
-  email             String   @unique
-  mobileNumber      String
+  email             String    @unique
+  phoneNumber       String
   company           String
   designation       String
   city              String
-  status            String   @default("pending")
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  status            String    @default("pending")
+  paymentStatus     String    @default("unpaid")
+  lastFourDigits    String?
+  imageUrl          String?
+  qrCodeUrl         String?
+  comments          Comment[]
+  ticketType        String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model Comment {
+  id             String       @id @default(cuid())
+  content        String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  registration   Registration @relation(fields: [registrationId], references: [id])
+  registrationId String
+  authorId       String
+  authorName     String
 }
