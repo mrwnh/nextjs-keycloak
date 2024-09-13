@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 export default async function RegistrationView({ params }: { params: { id: string } }) {
   const registration = await prisma.registration.findUnique({
     where: { id: params.id },
+    include: { payment: true },
   });
 
   if (!registration) {
@@ -50,7 +51,19 @@ export default async function RegistrationView({ params }: { params: { id: strin
         </div>
         <div className="mb-4">
           <p className="font-bold">Payment Status:</p>
-          <p>{registration.paymentStatus}</p>
+          <p>{registration.payment?.status}</p>
+        </div>
+        <div className="mb-4">
+          <p className="font-bold">Ticket Type:</p>
+          <p>{registration.payment?.ticketType || 'N/A'}</p>
+        </div>
+        <div className="mb-4">
+          <p className="font-bold">Payment Amount:</p>
+          <p>{registration.payment?.amount ? `${registration.payment.amount} ${registration.payment.currency}` : 'N/A'}</p>
+        </div>
+        <div className="mb-4">
+          <p className="font-bold">Payment Date:</p>
+          <p>{registration.payment?.paymentDate ? new Date(registration.payment.paymentDate).toLocaleDateString() : 'N/A'}</p>
         </div>
         {registration.imageUrl && (
           <div className="mb-4">

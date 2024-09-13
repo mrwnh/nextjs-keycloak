@@ -11,25 +11,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Registration } from "@/lib/schemas"
+import { PhoneInput } from "@/components/ui/phone-input"
 
-type Registration = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  imageUrl: string | null;
-  status: string;
-  paymentStatus: string;
-  registrationType: string;
-  company: string;
-  designation: string;
-  city: string;
-  phoneNumber: string;
-  createdAt: Date;
-  updatedAt: Date;
-  ticketType: string | null;
-  comments?: Array<{ id: string; content: string; authorName: string; createdAt: Date }>;
-};
+
 
 type SlideoverProps = {
   isOpen: boolean;
@@ -61,11 +46,11 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setEditedRegistration({ ...editedRegistration!, [e.target.name]: e.target.value });
+    setEditedRegistration(prev => prev ? { ...prev, [e.target.name]: e.target.value } : null);
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setEditedRegistration({ ...editedRegistration!, [name]: value });
+    setEditedRegistration(prev => prev ? { ...prev, [name]: value } : null);
   };
 
   const handleAddComment = () => {
@@ -73,13 +58,13 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
       const newCommentObj = {
         id: Date.now().toString(),
         content: newComment,
-        authorName: 'Current User', // Replace with actual user name
+        authorName: 'Current User', 
         createdAt: new Date(),
       };
-      setEditedRegistration({
-        ...editedRegistration,
-        comments: [...(editedRegistration.comments || []), newCommentObj],
-      });
+      setEditedRegistration(prev => prev ? {
+        ...prev,
+        comments: [...(prev.comments || []), newCommentObj],
+      } : null);
       setNewComment('');
     }
   };
@@ -109,6 +94,7 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
     switch (status.toLowerCase()) {
       case 'paid': return 'bg-green-100 text-green-800';
       case 'unpaid': return 'bg-red-100 text-red-800';
+      case 'waived': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -196,8 +182,8 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
                                   <Badge variant="secondary" className={getStatusColor(registration.status)}>
                                     {registration.status}
                                   </Badge>
-                                  <Badge variant="secondary" className={getPaymentStatusColor(registration.paymentStatus)}>
-                                    {registration.paymentStatus}
+                                  <Badge variant="secondary" className={getPaymentStatusColor(registration.payment?.status ?? 'UNPAID')}>
+                                    {registration.payment?.status ?? 'UNPAID'}
                                   </Badge>
                                 </div>
                               </div>
@@ -268,10 +254,10 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
                                   <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-500">Phone Number</label>
                                     {isEditing ? (
-                                      <Input
+                                      <PhoneInput
                                         name="phoneNumber"
                                         value={editedRegistration?.phoneNumber}
-                                        onChange={handleInputChange}
+                                        onChange={(value) => handleInputChange({ target: { name: 'phoneNumber', value } } as unknown as React.ChangeEvent<HTMLInputElement>)}
                                       />
                                     ) : (
                                       <p className="text-sm text-gray-900">{registration.phoneNumber}</p>
@@ -281,8 +267,8 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
                                     <label className="text-sm font-medium text-gray-500">Ticket Type</label>
                                     {isEditing ? (
                                       <Select
-                                        value={editedRegistration?.ticketType ?? ''}
-                                        onValueChange={(value) => handleSelectChange('ticketType', value)}
+                                        value={editedRegistration?.payment?.ticketType ?? ''}
+                                        onValueChange={(value) => handleSelectChange('payment.ticketType', value)}
                                       >
                                         <SelectTrigger>
                                           <SelectValue placeholder="Select ticket type" />
@@ -294,7 +280,7 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
                                         </SelectContent>
                                       </Select>
                                     ) : (
-                                      <p className="text-sm text-gray-900">{registration.ticketType}</p>
+                                      <p className="text-sm text-gray-900">{registration.payment?.ticketType ?? 'N/A'}</p>
                                     )}
                                   </div>
                                   <div className="space-y-2">
@@ -316,7 +302,7 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
                               </CardHeader>
                               <CardContent>
                                 <div className="space-y-4">
-                                  {registration.comments?.map((comment) => (
+                                  {editedRegistration?.comments?.map((comment: { id: string; content: string; authorName: string; createdAt: Date }) => (
                                     <div key={comment.id} className="bg-gray-50 p-3 rounded-lg">
                                       <p className="text-sm">{comment.content}</p>
                                       <p className="text-xs text-gray-500 mt-1">

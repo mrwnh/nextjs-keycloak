@@ -1,31 +1,40 @@
 export type Registration = {
-    id: string;
-    registrationType: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phoneNumber: string;
-    company: string;
-    designation: string;
-    city: string;
-    status: string;
-    paymentStatus: string;
-    lastFourDigits: string | null;
-    imageUrl: string | null;
-    qrCodeUrl: string | null;
-    ticketType: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-    comments?: Comment[];
-  };
-  
-  export type Comment = {
-    id: string;
-    content: string;
-    author: string;
-    createdAt: Date;
-    updatedAt: Date;
-    registrationId: string;
-    authorId: string;
-    authorName: string;
-  };
+  id: string;
+  registrationType: "Visitor" | "Sponsor" | "Speaker" | "Media";
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  company: string;
+  designation: string;
+  city: string;
+  status: "Pending" | "Approved" | "Rejected";
+  imageUrl: string | null;
+  qrCodeUrl: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  payment?: Payment;
+  comments?: Comment[];
+};
+
+export type Payment = {
+  id: string;
+  status: 'Unpaid' | 'Paid' | 'Waived';
+  ticketType: string | null;
+  lastFourDigits: string | null;
+  paymentDate: Date | null;
+  amount: number | null;
+  currency: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Comment = {
+  id: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+  registrationId: string;
+  authorId: string;
+  authorName: string;
+};

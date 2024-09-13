@@ -67,9 +67,11 @@ export const authOptions: AuthOptions = {
       }
     },
     async session({ session, token }) {
-      session.accessToken = token.accessToken
-      session.error = token.error
-      return session
+      if (session.user) {
+        session.accessToken = token.accessToken as string;
+        session.error = token.error as string | undefined;
+      }
+      return session;
     },
     async redirect({ url, baseUrl }) {
       // Prevent recursive redirections

@@ -8,11 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import RegistrationCard from "@/components/RegistrationCard";
 import { RegistrationForm } from "@/components/form";
 import { RegistrationFormSkeleton } from "@/components/register-skeleton";
+import { Registration } from "@/lib/schemas";
 
 export default function Register() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [registration, setRegistration] = useState(null);
+  const [registration, setRegistration] = useState<Registration | null>(null);
   const [isRTL, setIsRTL] = useState(false);
 
   useEffect(() => {
@@ -96,7 +97,7 @@ export default function Register() {
       ) : registration ? (
         <RegistrationCard 
           registration={registration} 
-          onUpdate={(updatedRegistration) => setRegistration(updatedRegistration)}
+          onUpdate={(updatedRegistration) => setRegistration(updatedRegistration as Registration)}
         />
       ) : (
         <Card className="w-full max-w-2xl mx-auto">

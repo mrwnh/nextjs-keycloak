@@ -19,14 +19,12 @@ model Registration {
   designation       String
   city              String
   status            String    @default("pending")
-  paymentStatus     String    @default("unpaid")
-  lastFourDigits    String?
   imageUrl          String?
   qrCodeUrl         String?
   comments          Comment[]
-  ticketType        String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+  payment           Payment?
 }
 
 model Comment {
@@ -38,4 +36,24 @@ model Comment {
   registrationId String
   authorId       String
   authorName     String
+}
+
+model Payment {
+  id             String       @id @default(cuid())
+  registration   Registration @relation(fields: [registrationId], references: [id])
+  registrationId String       @unique
+  status         PaymentStatus
+  ticketType     String?
+  lastFourDigits String?
+  paymentDate    DateTime?
+  amount         Float?
+  currency       String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  WAIVED
 }

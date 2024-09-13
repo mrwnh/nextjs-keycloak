@@ -7,7 +7,7 @@ import { columns } from "./columns"
 import { DataTable } from "./data-table"
 import { useToast } from "@/hooks/use-toast"
 import { Slideover } from "@/components/Slideover"
-import { type Registration } from "@/types/registration";
+import { Registration } from "@/lib/schemas";
 import { ColumnDef } from '@tanstack/react-table'
 
 
@@ -183,7 +183,7 @@ export default function AdminRegistrations() {
         onReject={() => handleStatusUpdate(selectedRegistration?.id ?? "", "reject")}
         onUpdate={(updatedRegistration: any) => handleRegistrationUpdate(updatedRegistration)}
         isLoading={isLoading}
-        registration={selectedRegistration}
+        registration={selectedRegistration as Registration}
       />
     </div>
   )

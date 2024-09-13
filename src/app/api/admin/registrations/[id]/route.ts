@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from '../../../auth/[...nextauth]/route'
 import { PrismaClient } from '@prisma/client';
+import { Registration } from "../../../../../lib/schemas";
 
 const prisma = new PrismaClient();
 
@@ -25,15 +26,23 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         company: data.company,
         designation: data.designation,
         city: data.city,
-        ticketType: data.ticketType,
         status: data.status,
-        paymentStatus: data.paymentStatus,
-        lastFourDigits: data.lastFourDigits,
         imageUrl: data.imageUrl,
         qrCodeUrl: data.qrCodeUrl,
+        payment: {
+          update: {
+            status: data.payment.status,
+            ticketType: data.payment.ticketType,
+            lastFourDigits: data.payment.lastFourDigits,
+            paymentDate: data.payment.paymentDate,
+            amount: data.payment.amount,
+            currency: data.payment.currency,
+          },
+        },
       },
       include: {
         comments: true,
+        payment: true,
       },
     });
 

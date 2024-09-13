@@ -7,8 +7,9 @@ import { RegistrationForm } from './form';
 import { Badge } from '@/components/ui/badge';
 import { User, Mail, Phone, MapPin, Briefcase, Award, Building } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Registration } from '@/lib/schemas';
 
-export default function RegistrationCard({ registration, onUpdate }: { registration: any, onUpdate: (updatedRegistration: any) => void }) {
+export default function RegistrationCard({ registration, onUpdate }: { registration: Registration, onUpdate: (updatedRegistration: Registration) => void }) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentRegistration, setCurrentRegistration] = useState(registration);
 
@@ -60,7 +61,10 @@ export default function RegistrationCard({ registration, onUpdate }: { registrat
         {isEditing ? (
           <>
             <RegistrationForm
-              initialData={currentRegistration}
+              initialData={{
+                ...currentRegistration,
+                imageUrl: currentRegistration.imageUrl || undefined
+              }}
               onSubmit={handleUpdate}
               isEmailDisabled={true}
             />
@@ -77,7 +81,7 @@ export default function RegistrationCard({ registration, onUpdate }: { registrat
           <>
             <div className="flex items-center space-x-4 mb-6">
               <Avatar className="w-20 h-20">
-                <AvatarImage src={currentRegistration.imageUrl} alt="Profile" />
+                <AvatarImage src={registration.imageUrl || undefined} alt={`${registration.firstName} ${registration.lastName}`} />
                 <AvatarFallback>
                   <User className="w-10 h-10" />
                 </AvatarFallback>
@@ -129,6 +133,13 @@ export default function RegistrationCard({ registration, onUpdate }: { registrat
                   </div>
                 </div>
               </div>
+            </div>
+            <div className="mt-4">
+              <h3 className="font-semibold text-[#162851] dark:text-white text-lg mb-2">Payment Information</h3>
+              <p><span className="font-semibold">Status:</span> {currentRegistration.payment?.status}</p>
+              <p><span className="font-semibold">Ticket Type:</span> {currentRegistration.payment?.ticketType || 'N/A'}</p>
+              <p><span className="font-semibold">Amount:</span> {currentRegistration.payment?.amount ? `${currentRegistration.payment.amount} ${currentRegistration.payment.currency}` : 'N/A'}</p>
+              <p><span className="font-semibold">Payment Date:</span> {currentRegistration.payment?.paymentDate ? new Date(currentRegistration.payment.paymentDate).toLocaleDateString() : 'N/A'}</p>
             </div>
             <div className="mt-6 flex justify-end">
               <Button 
