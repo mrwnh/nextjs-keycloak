@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { SetStateAction, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import RegistrationCard from "@/components/RegistrationCard";
 import { RegistrationForm } from "@/components/form";
 import { RegistrationFormSkeleton } from "@/components/register-skeleton";
@@ -74,7 +74,7 @@ export default function Register() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(values), // This now includes the imageUrl
+        body: JSON.stringify(values),
       });
 
       if (response.ok) {
@@ -89,7 +89,7 @@ export default function Register() {
   };
 
   return (
-    <div className={`container mx-auto p-4 ${isRTL ? 'rtl' : 'ltr'}`}>
+    <div className={`container mx-auto p-4 min-h-screen flex items-center justify-center bg-background ${isRTL ? 'rtl' : 'ltr'}`}>
       {status === "loading" ? (
         <RegistrationFormSkeleton />
       ) : status === "unauthenticated" ? (
@@ -100,9 +100,12 @@ export default function Register() {
           onUpdate={(updatedRegistration) => setRegistration(updatedRegistration as Registration)}
         />
       ) : (
-        <Card className="w-full max-w-2xl mx-auto">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-2xl font-bold">Register for RFF 2025</CardTitle>
+        <Card className="w-full max-w-4xl mx-auto bg-white dark:bg-gray-900 shadow-lg">
+          <CardHeader className="text-center">
+            <CardTitle className="text-4xl font-bold text-primary mb-2">Register for RFF 2025</CardTitle>
+            <CardDescription className="text-xl text-muted-foreground">
+              Real Estate Future Forum: Shaping Dreams into Reality
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <RegistrationForm
