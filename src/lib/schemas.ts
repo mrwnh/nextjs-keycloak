@@ -1,8 +1,10 @@
 import { z } from "zod";
 
+export const PaymentStatus = z.enum(["UNPAID", "PAID", "WAIVED", "REFUNDED"]);
+
 export const paymentSchema = z.object({
   id: z.string(),
-  status: z.enum(["UNPAID", "PAID", "WAIVED"]),
+  status: PaymentStatus,
   ticketType: z.string().nullable(),
   lastFourDigits: z.string().nullable(),
   paymentDate: z.date().nullable(),
@@ -12,8 +14,10 @@ export const paymentSchema = z.object({
   updatedAt: z.date(),
 });
 
+export const RegistrationType = z.enum(["Sponsor", "Speaker", "Media", "Visitor"]);
+
 export const registrationSchema = z.object({
-  registrationType: z.enum(["Sponsor", "Speaker", "Media", "Visitor"]),
+  registrationType: RegistrationType,
   firstName: z.string().min(2, "First name must be at least 2 characters."),
   lastName: z.string().min(2, "Last name must be at least 2 characters."),
   email: z.string().email("Invalid email address."),
@@ -24,7 +28,19 @@ export const registrationSchema = z.object({
   imageUrl: z.string().optional(),
 });
 
+export const commentSchema = z.object({
+  id: z.string(),
+  content: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  registrationId: z.string(),
+  authorId: z.string(),
+  authorName: z.string(),
+});
+
 export type RegistrationInput = z.infer<typeof registrationSchema>;
+export type PaymentInput = z.infer<typeof paymentSchema>;
+export type CommentInput = z.infer<typeof commentSchema>;
 
 export type Registration = RegistrationInput & {
   id: string;
@@ -32,28 +48,12 @@ export type Registration = RegistrationInput & {
   qrCodeUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
-  payment?: Payment;
+  payment?: Payment | null;
   comments?: Comment[];
 };
 
-export type Payment = {
-  id: string;
-  status: 'UNPAID' | 'PAID' | 'WAIVED';
-  ticketType: string | null;
-  lastFourDigits: string | null;
-  paymentDate: Date | null;
-  amount: number | null;
-  currency: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+export type Payment = PaymentInput;
+export type Comment = CommentInput;
 
-export type Comment = {
-  id: string;
-  content: string;
-  createdAt: Date;
-  updatedAt: Date;
-  registrationId: string;
-  authorId: string;
-  authorName: string;
-};
+export type PaymentStatusType = z.infer<typeof PaymentStatus>;
+export type RegistrationTypeType = z.infer<typeof RegistrationType>;

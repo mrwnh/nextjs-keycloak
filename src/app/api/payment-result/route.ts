@@ -44,11 +44,16 @@ export async function GET(req: Request) {
         },
       });
 
-      // Redirect to the registration page with success status
-      return NextResponse.redirect(`/register?paymentStatus=success&registrationId=${updatedRegistration.id}`);
+      return NextResponse.json({
+        success: true,
+        updatedRegistration,
+      });
     } else {
       // Payment failed
-      return NextResponse.redirect(`/register?paymentStatus=failed`);
+      return NextResponse.json({
+        success: false,
+        error: 'Payment failed',
+      });
     }
   } catch (error) {
     console.error('Error processing payment result:', error);

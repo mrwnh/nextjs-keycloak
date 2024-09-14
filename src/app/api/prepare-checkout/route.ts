@@ -1,5 +1,3 @@
-// src/app/api/prepare-checkout/route.ts
-
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../api/auth/[...nextauth]/route";
@@ -84,8 +82,9 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ checkoutId });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error preparing checkout:', error);
-    return NextResponse.json({ error: 'Failed to prepare checkout', details: error.message }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: 'Failed to prepare checkout', details: errorMessage }, { status: 500 });
   }
 }

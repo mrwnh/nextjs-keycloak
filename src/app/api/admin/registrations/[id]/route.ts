@@ -8,16 +8,16 @@ import { z } from 'zod';
 const prisma = new PrismaClient();
 
 const UpdateRegistrationSchema = z.object({
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
+  firstName: z.string().min(2).optional(),
+  lastName: z.string().min(2).optional(),
   email: z.string().email().optional(),
-  phoneNumber: z.string().optional(),
-  company: z.string().optional(),
-  designation: z.string().optional(),
-  city: z.string().optional(),
+  phoneNumber: z.string().min(10).optional(),
+  company: z.string().min(2).optional(),
+  designation: z.string().min(2).optional(),
+  city: z.string().min(2).optional(),
   status: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
   imageUrl: z.string().url().optional(),
-  qrCodeUrl: z.string().url().optional(),
+  qrCodeUrl: z.string().url().nullable().optional(),
   payment: z.object({
     status: z.enum(['UNPAID', 'PAID', 'WAIVED']).optional(),
     ticketType: z.string().optional(),

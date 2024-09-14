@@ -40,15 +40,16 @@ export default function AdminRegistrations() {
         );
         toast({
           title: "Success",
-          description: `Registration ${action}d successfully`,
+          description: `Registration status updated to ${updatedRegistration.status}`,
         });
       } else {
         throw new Error('Failed to update registration status');
       }
     } catch (error) {
+      console.error('Error updating registration status:', error);
       toast({
         title: "Error",
-        description: `Failed to ${action} registration`,
+        description: "Failed to update registration status",
         variant: "destructive",
       });
     } finally {

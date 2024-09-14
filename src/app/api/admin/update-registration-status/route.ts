@@ -3,8 +3,14 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { PrismaClient } from '@prisma/client';
 import { Registration } from "@/lib/schemas";
+import { z } from 'zod';
 
 const prisma = new PrismaClient();
+
+const UpdateStatusSchema = z.object({
+  id: z.string().cuid(),
+  status: z.enum(['approve', 'reject'])
+});
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -13,16 +19,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
-  const data = await req.json();
-
   try {
+    const data = await req.json();
+    const validatedData = UpdateStatusSchema.parse(data);
+
     const updatedRegistration = await prisma.registration.update({
-      where: { id: data.id },
-      data: { status: data.status === 'approve' ? 'approved' : 'rejected' },
+      where: { id: validatedData.id },
+      data: { status: validatedData.status === 'approve' ? 'approved' : 'rejected' },
     });
 
     return NextResponse.json(updatedRegistration);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Invalid input data', details: error.errors }, { status: 400 });
+    }
     console.error('Error updating registration status:', error);
     return NextResponse.json({ error: 'Failed to update registration status' }, { status: 500 });
   }

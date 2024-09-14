@@ -8,7 +8,7 @@ export type Registration = {
   company: string;
   designation: string;
   city: string;
-  status: "Pending" | "Approved" | "Rejected";
+  status: "pending" | "approved" | "rejected";
   imageUrl: string | null;
   qrCodeUrl: string | null;
   createdAt: Date;

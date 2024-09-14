@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { X, CheckCircle, XCircle, User, Briefcase, MapPin, Phone, Calendar, CreditCard, Edit, Save } from 'lucide-react'
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Registration } from "@/lib/schemas"
+import { Registration, PaymentStatusType } from "@/lib/schemas"
 import { PhoneInput } from "@/components/ui/phone-input"
 
 
@@ -28,8 +28,16 @@ type SlideoverProps = {
 
 export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLoading, registration }: SlideoverProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedRegistration, setEditedRegistration] = useState<Registration | null>(registration);
+  const [editedRegistration, setEditedRegistration] = useState<Registration | null>(null);
   const [newComment, setNewComment] = useState('');
+  const [showPaymentRequest, setShowPaymentRequest] = useState(false);
+  const [selectedTicketType, setSelectedTicketType] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (registration) {
+      setEditedRegistration({ ...registration });
+    }
+  }, [registration]);
 
   const handleEdit = () => {
     if (registration) {
@@ -50,7 +58,20 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setEditedRegistration(prev => prev ? { ...prev, [name]: value } : null);
+    setEditedRegistration(prev => {
+      if (!prev) return null;
+      if (name.includes('.')) {
+        const [parent, child] = name.split('.');
+        return {
+          ...prev,
+          [parent]: {
+            ...(prev[parent as keyof Registration] as object),
+            [child]: value
+          }
+        };
+      }
+      return { ...prev, [name]: value };
+    });
   };
 
   const handleAddComment = () => {
@@ -69,6 +90,35 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
         comments: [...(prev.comments || []), newCommentObj],
       } : null);
       setNewComment('');
+    }
+  };
+
+  const handlePaymentRequest = async () => {
+    if (!selectedTicketType) return;
+
+    try {
+      const response = await fetch('/api/create-payment-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          registrationId: editedRegistration?.id,
+          ticketType: selectedTicketType,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create payment request');
+      }
+
+      const updatedRegistration = await response.json();
+      setEditedRegistration(updatedRegistration);
+      setShowPaymentRequest(false);
+      setSelectedTicketType(null);
+    } catch (error) {
+      console.error('Error creating payment request:', error);
+      // Handle error (e.g., show error message to user)
     }
   };
 
@@ -185,8 +235,8 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
                                   <Badge variant="secondary" className={getStatusColor(registration.status)}>
                                     {registration.status}
                                   </Badge>
-                                  <Badge variant="secondary" className={getPaymentStatusColor(registration.payment?.status ?? 'UNPAID')}>
-                                    {registration.payment?.status ?? 'UNPAID'}
+                                  <Badge variant="secondary" className={getPaymentStatusColor(editedRegistration?.payment?.status ?? 'UNPAID')}>
+                                    {editedRegistration?.payment ? `${editedRegistration.payment.status} - ${editedRegistration.payment.ticketType}` : 'NO PAYMENT'}
                                   </Badge>
                                 </div>
                               </div>
@@ -266,25 +316,47 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
                                       <p className="text-sm text-gray-900">{registration.phoneNumber}</p>
                                     )}
                                   </div>
-                                  <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-500">Ticket Type</label>
-                                    {isEditing ? (
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <label htmlFor="payment.status" className="block text-sm font-medium text-gray-700">
+                                        Payment Status
+                                      </label>
                                       <Select
-                                        value={editedRegistration?.payment?.ticketType ?? ''}
+                                        name="payment.status"
+                                        value={editedRegistration?.payment?.status || ''}
+                                        onValueChange={(value) => handleSelectChange('payment.status', value)}
+                                        disabled={!isEditing}
+                                      >
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Select payment status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="UNPAID">Unpaid</SelectItem>
+                                          <SelectItem value="PAID">Paid</SelectItem>
+                                          <SelectItem value="WAIVED">Waived</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div>
+                                      <label htmlFor="payment.ticketType" className="block text-sm font-medium text-gray-700">
+                                        Ticket Type
+                                      </label>
+                                      <Select
+                                        name="payment.ticketType"
+                                        value={editedRegistration?.payment?.ticketType || ''}
                                         onValueChange={(value) => handleSelectChange('payment.ticketType', value)}
+                                        disabled={!isEditing}
                                       >
                                         <SelectTrigger>
                                           <SelectValue placeholder="Select ticket type" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                          <SelectItem value="1 day">1 day</SelectItem>
-                                          <SelectItem value="2 days">2 days</SelectItem>
                                           <SelectItem value="Full Access">Full Access</SelectItem>
+                                          <SelectItem value="2 days">2 days</SelectItem>
+                                          <SelectItem value="1 day">1 day</SelectItem>
                                         </SelectContent>
                                       </Select>
-                                    ) : (
-                                      <p className="text-sm text-gray-900">{registration.payment?.ticketType ?? 'N/A'}</p>
-                                    )}
+                                    </div>
                                   </div>
                                   <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-500">Created At</label>
@@ -329,6 +401,39 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
                             </Card>
                           </TabsContent>
                         </Tabs>
+                        {editedRegistration?.status === 'APPROVED' && !editedRegistration.payment && (
+                          <Card className="mt-6">
+                            <CardHeader>
+                              <CardTitle>Issue Payment Request</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              {!showPaymentRequest ? (
+                                <Button onClick={() => setShowPaymentRequest(true)}>
+                                  Issue Payment Request
+                                </Button>
+                              ) : (
+                                <div className="space-y-4">
+                                  <Select
+                                    value={selectedTicketType || ''}
+                                    onValueChange={(value) => setSelectedTicketType(value)}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select ticket type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="1 day">1 day</SelectItem>
+                                      <SelectItem value="2 days">2 days</SelectItem>
+                                      <SelectItem value="Full Access">Full Access</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <Button onClick={handlePaymentRequest} disabled={!selectedTicketType}>
+                                    Create Payment Request
+                                  </Button>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        )}
                       </div>
                     </ScrollArea>
                     <div className="flex flex-shrink-0 justify-between items-center px-4 py-4 bg-gray-50">

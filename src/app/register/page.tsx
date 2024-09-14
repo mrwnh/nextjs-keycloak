@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import RegistrationCard from "@/components/RegistrationCard";
 import { RegistrationForm } from "@/components/form";
 import { RegistrationFormSkeleton } from "@/components/register-skeleton";
-import { Registration } from "@/lib/schemas";
+import { Registration, registrationSchema } from "@/lib/schemas";
+import TicketPaymentCTA from "@/components/TicketPaymentCTA";
 
 export default function Register() {
   const { data: session, status } = useSession();
@@ -50,17 +51,7 @@ export default function Register() {
     }
   }, [status, session, router]);
 
-  const formSchema = z.object({
-    registrationType: z.string(),
-    firstName: z.string(),
-    lastName: z.string(),
-    email: z.string().email(),
-    phoneNumber: z.string(),
-    imageUrl: z.string().optional(),
-    company: z.string(),
-    designation: z.string(),
-    city: z.string(),
-  });
+  const formSchema = registrationSchema;
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
@@ -78,13 +69,17 @@ export default function Register() {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        setRegistration(data);
         router.push('/registration-confirmation');
       } else {
         const errorData = await response.json();
         console.error('Registration failed:', errorData.error);
+        // Show error message to user
       }
     } catch (error) {
       console.error('Error during registration:', error);
+      // Show error message to user
     }
   };
 
@@ -95,10 +90,34 @@ export default function Register() {
       ) : status === "unauthenticated" ? (
         null // The useEffect will handle redirection
       ) : registration ? (
-        <RegistrationCard 
-          registration={registration} 
-          onUpdate={(updatedRegistration) => setRegistration(updatedRegistration as Registration)}
-        />
+        <div className="w-full max-w-4xl mx-auto">
+          <Card className="mb-8 bg-white dark:bg-gray-900 shadow-lg">
+            <CardHeader className="text-center">
+              <CardTitle className="text-4xl font-bold text-primary mb-2">Registration Details</CardTitle>
+              <CardDescription className="text-xl text-muted-foreground">
+                Your RFF 2025 Registration Information
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <RegistrationCard 
+                registration={registration} 
+                onUpdate={(updatedRegistration) => setRegistration(updatedRegistration as Registration)}
+              />
+            </CardContent>
+          </Card>
+          <TicketPaymentCTA
+            ticketType={registration.payment?.ticketType || null}
+            amount={registration.payment?.amount || null}
+            currency={registration.payment?.currency || null}
+            paymentStatus={registration.payment?.status || 'UNPAID'}
+            registrationStatus={registration.status}
+            registrationId={registration.id}
+            onPayNow={() => {/* Implement payment logic */}}
+            onDownloadReceipt={() => {/* Implement receipt download */}}
+            onDownloadTicket={() => {/* Implement ticket download */}}
+            onDownloadQRCode={() => {/* Implement QR code download */}}
+          />
+        </div>
       ) : (
         <Card className="w-full max-w-4xl mx-auto bg-white dark:bg-gray-900 shadow-lg">
           <CardHeader className="text-center">

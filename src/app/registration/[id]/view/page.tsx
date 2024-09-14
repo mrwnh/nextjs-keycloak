@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { notFound } from 'next/navigation';
+import Image from 'next/image';
 
 const prisma = new PrismaClient();
 
@@ -51,7 +52,7 @@ export default async function RegistrationView({ params }: { params: { id: strin
         </div>
         <div className="mb-4">
           <p className="font-bold">Payment Status:</p>
-          <p>{registration.payment?.status}</p>
+          <p>{registration.payment?.status || 'N/A'}</p>
         </div>
         <div className="mb-4">
           <p className="font-bold">Ticket Type:</p>
@@ -68,7 +69,7 @@ export default async function RegistrationView({ params }: { params: { id: strin
         {registration.imageUrl && (
           <div className="mb-4">
             <p className="font-bold">Profile Picture:</p>
-            <img src={registration.imageUrl} alt="Profile" className="w-32 h-32 object-cover rounded-full" />
+            <Image src={registration.imageUrl} alt="Profile" width={128} height={128} className="object-cover rounded-full" />
           </div>
         )}
       </div>
