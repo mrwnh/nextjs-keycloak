@@ -24,7 +24,6 @@ export type Registration = {
   designation: string
   city: string
   status: "pending" | "approved" | "rejected"
-  paymentStatus: "paid" | "unpaid"
 }
 
 export const columns: ColumnDef<Registration>[] = [

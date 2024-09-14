@@ -24,17 +24,36 @@ export const registrationSchema = z.object({
   imageUrl: z.string().optional(),
 });
 
-export type Registration = z.infer<typeof registrationSchema>;
-export type Payment = z.infer<typeof paymentSchema>;
+export type RegistrationInput = z.infer<typeof registrationSchema>;
 
-export const commentSchema = z.object({
-  id: z.string(),
-  content: z.string(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  registrationId: z.string(),
-  authorId: z.string(),
-  authorName: z.string(),
-});
+export type Registration = RegistrationInput & {
+  id: string;
+  status: string;
+  qrCodeUrl: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  payment?: Payment;
+  comments?: Comment[];
+};
 
-export type Comment = z.infer<typeof commentSchema>;
+export type Payment = {
+  id: string;
+  status: 'UNPAID' | 'PAID' | 'WAIVED';
+  ticketType: string | null;
+  lastFourDigits: string | null;
+  paymentDate: Date | null;
+  amount: number | null;
+  currency: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Comment = {
+  id: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+  registrationId: string;
+  authorId: string;
+  authorName: string;
+};

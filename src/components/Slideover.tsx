@@ -60,6 +60,9 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
         content: newComment,
         authorName: 'Current User', 
         createdAt: new Date(),
+        updatedAt: new Date(),
+        registrationId: editedRegistration.id,
+        authorId: 'current-user-id', // Replace with actual user ID
       };
       setEditedRegistration(prev => prev ? {
         ...prev,
@@ -92,9 +95,9 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
 
   const getPaymentStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'paid': return 'bg-green-100 text-green-800';
-      case 'unpaid': return 'bg-red-100 text-red-800';
-      case 'waived': return 'bg-blue-100 text-blue-800';
+      case 'PAID': return 'bg-green-100 text-green-800';
+      case 'UNPAID': return 'bg-red-100 text-red-800';
+      case 'WAIVED': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };

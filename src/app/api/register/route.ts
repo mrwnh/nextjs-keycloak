@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { PrismaClient } from '@prisma/client';
-import { sendConfirmationEmail } from '@/utils/email';
-import { registrationSchema, Registration } from "@/lib/schemas";
+import { registrationSchema, RegistrationInput } from "@/lib/schemas";
 import { z } from "zod";
 import QRCode from 'qrcode';
 import { put } from '@vercel/blob';
+import { sendConfirmationEmail } from '@/utils/email';
 
 // Add this type declaration at the top of the file
 declare module "next-auth" {
@@ -31,37 +31,25 @@ export async function POST(req: Request) {
   const data = await req.json();
 
   try {
-    const validatedData = registrationSchema.parse(data);
-    const existingRegistration = await prisma.registration.findUnique({
-      where: { email: validatedData.email },
-    });
-
-    if (existingRegistration) {
-      return NextResponse.json({ error: 'User already registered' }, { status: 400 });
-    }
-
-    // Remove 'id', 'comments', and 'payment' from validatedData
-    const { id, comments, payment, ...registrationData } = validatedData;
+    const validatedData: RegistrationInput = registrationSchema.parse(data);
 
     let qrCodeUrl = null;
 
-    // Only generate QR code if status is 'approved'
-    if (registrationData.status === 'approved') {
-      // Generate QR code
-      const qrCodeBuffer = await QRCode.toBuffer(`${process.env.NEXTAUTH_URL}/registration/${id}/view`);
+    // Generate QR code
+    const qrCodeBuffer = await QRCode.toBuffer(`${process.env.NEXTAUTH_URL}/registration/${session.user.id}/view`);
 
-      // Upload QR code to Vercel Blob
-      const { url } = await put(`qr-codes/${id}.png`, qrCodeBuffer, {
-        access: 'public',
-        token: process.env.BLOB_READ_WRITE_TOKEN as string,
-      });
+    // Upload QR code to Vercel Blob
+    const { url } = await put(`qr-codes/${session.user.id}.png`, qrCodeBuffer, {
+      access: 'public',
+      token: process.env.BLOB_READ_WRITE_TOKEN as string,
+    });
 
-      qrCodeUrl = url;
-    }
+    qrCodeUrl = url;
 
     const registration = await prisma.registration.create({
       data: {
-        ...registrationData,
+        ...validatedData,
+        status: 'pending',
         qrCodeUrl,
         payment: {
           create: {
@@ -82,9 +70,7 @@ export async function POST(req: Request) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid registration data', details: error.errors }, { status: 400 });
     }
-    if (error instanceof Error) {
-      console.error('Error during registration:', error.message);
-      return NextResponse.json({ error: 'Registration failed' }, { status: 500 });
-    }
+    console.error('Error during registration:', error);
+    return NextResponse.json({ error: 'Registration failed' }, { status: 500 });
   }
 }
