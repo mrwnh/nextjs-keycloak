@@ -49,7 +49,7 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
     if (editedRegistration) {
       const updatedRegistration = {
         ...editedRegistration,
-        status: editedRegistration.status as RegistrationStatusType,
+        status: editedRegistration.status.toUpperCase() as RegistrationStatusType,
       };
       await onUpdate(updatedRegistration);
       setIsEditing(false);
@@ -355,9 +355,13 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
                                           <SelectValue placeholder="Select ticket type" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                          <SelectItem value="Full Access">Full Access</SelectItem>
-                                          <SelectItem value="2 days">2 days</SelectItem>
-                                          <SelectItem value="1 day">1 day</SelectItem>
+                                          <SelectItem value="FULL">Full Access</SelectItem>
+                                          <SelectItem value="FREE">Free</SelectItem>
+                                          <SelectItem value="VVIP">VVIP</SelectItem>
+                                          <SelectItem value="VIP">VIP</SelectItem>
+                                          <SelectItem value="PASS">Pass</SelectItem>
+                                          <SelectItem value="ONE_DAY">1 Day</SelectItem>
+                                          <SelectItem value="TWO_DAY">2 Days</SelectItem>
                                         </SelectContent>
                                       </Select>
                                     </div>
@@ -425,9 +429,13 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
                                       <SelectValue placeholder="Select ticket type" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="1 day">1 day</SelectItem>
-                                      <SelectItem value="2 days">2 days</SelectItem>
-                                      <SelectItem value="Full Access">Full Access</SelectItem>
+                                      <SelectItem value="ONE_DAY">1 Day</SelectItem>
+                                      <SelectItem value="TWO_DAY">2 Days</SelectItem>
+                                      <SelectItem value="FULL">Full Access</SelectItem>
+                                      <SelectItem value="FREE">Free</SelectItem>
+                                      <SelectItem value="VVIP">VVIP</SelectItem>
+                                      <SelectItem value="VIP">VIP</SelectItem>
+                                      <SelectItem value="PASS">Pass</SelectItem>
                                     </SelectContent>
                                   </Select>
                                   <Button onClick={handlePaymentRequest} disabled={!selectedTicketType}>

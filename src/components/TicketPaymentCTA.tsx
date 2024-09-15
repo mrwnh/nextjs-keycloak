@@ -27,10 +27,18 @@ interface TicketPaymentProps {
   onDownloadQRCode: () => void;
 }
 
+const ticketConfig = {
+  FULL: { amount: 300, currency: 'EUR' },
+  TWO_DAY: { amount: 200, currency: 'EUR' },
+  ONE_DAY: { amount: 100, currency: 'EUR' },
+  FREE: { amount: 0, currency: 'EUR' },
+  VVIP: { amount: 500, currency: 'EUR' },
+  VIP: { amount: 400, currency: 'EUR' },
+  PASS: { amount: 150, currency: 'EUR' },
+};
+
 export default function TicketPaymentCTA({ 
   ticketType, 
-  amount, 
-  currency, 
   paymentStatus,
   registrationStatus,
   registrationId,
@@ -38,16 +46,18 @@ export default function TicketPaymentCTA({
   onDownloadReceipt,
   onDownloadTicket,
   onDownloadQRCode
-}: TicketPaymentProps & { registrationStatus: string; registrationId: string }) {
+}: TicketPaymentProps) {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentConfirmation, setPaymentConfirmation] = useState<PaymentDetailsBase | null>(null);
+
+  const ticketInfo = ticketType ? ticketConfig[ticketType as keyof typeof ticketConfig] : null;
 
   const handlePayNow = async () => {
     setIsPaymentModalOpen(true);
     const response = await fetch('/api/prepare-checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ currency, registrationId, ticketType }),
+      body: JSON.stringify({ registrationId, ticketType }),
     });
     const data = await response.json();
     if (data.checkoutId) {
@@ -81,13 +91,13 @@ export default function TicketPaymentCTA({
         <CardContent className="space-y-4 p-6">
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-[#a2a5ae]">Ticket Type</span>
-            <span className="font-semibold text-[#162851]">{ticketType}</span>
+            <span className="font-semibold text-[#162851]">{ticketType || 'N/A'}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-[#a2a5ae]">Amount</span>
             <span className="font-semibold text-[#162851] flex items-center">
               <DollarSign className="h-4 w-4 mr-1 text-[#66cada]" />
-              {amount} {currency}
+              {ticketInfo ? `${ticketInfo.amount} ${ticketInfo.currency}` : 'N/A'}
             </span>
           </div>
           <div className="flex justify-between items-center">
@@ -105,7 +115,7 @@ export default function TicketPaymentCTA({
           </div>
         </CardContent>
         <CardFooter className="flex flex-col items-stretch gap-4 p-6">
-          {registrationStatus === 'approved' && paymentStatus === 'UNPAID' ? (
+          {registrationStatus === 'APPROVED' && paymentStatus === 'UNPAID' ? (
             <>
               <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded-r-md flex items-start">
                 <AlertCircle className="h-5 w-5 text-yellow-500 mr-2 flex-shrink-0 mt-0.5" />

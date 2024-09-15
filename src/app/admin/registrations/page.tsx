@@ -181,8 +181,8 @@ export default function AdminRegistrations() {
       <Slideover 
         isOpen={slideoverOpen} 
         onClose={() => setSlideoverOpen(false)}
-        onApprove={() => handleStatusUpdate(selectedRegistration?.id ?? "", "approve")}
-        onReject={() => handleStatusUpdate(selectedRegistration?.id ?? "", "reject")}
+        onApprove={() => handleStatusUpdate(selectedRegistration?.id ?? "", "APPROVED")}
+        onReject={() => handleStatusUpdate(selectedRegistration?.id ?? "", "REJECTED")}
         onUpdate={(updatedRegistration: any) => handleRegistrationUpdate(updatedRegistration)}
         isLoading={isLoading}
         registration={selectedRegistration as Registration}

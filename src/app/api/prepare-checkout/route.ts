@@ -6,10 +6,19 @@ import querystring from 'querystring';
 import { TicketType } from '@/lib/schemas';
 import { z } from 'zod';
 
+const ticketConfig = {
+  FULL: { amount: 300, currency: 'EUR' },
+  TWO_DAY: { amount: 200, currency: 'EUR' },
+  ONE_DAY: { amount: 100, currency: 'EUR' },
+  FREE: { amount: 0, currency: 'EUR' },
+  VVIP: { amount: 500, currency: 'EUR' },
+  VIP: { amount: 400, currency: 'EUR' },
+  PASS: { amount: 150, currency: 'EUR' },
+};
+
 const PrepareCheckoutSchema = z.object({
-  currency: z.string(),
   registrationId: z.string(),
-  ticketType: z.enum(["FULL", "FREE", "VVIP", "VIP", "PASS", "ONE_DAY", "TWO_DAY"]),
+  ticketType: TicketType.default('FULL'),
 });
 
 export async function POST(req: Request) {
@@ -21,22 +30,14 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { currency, registrationId, ticketType } = PrepareCheckoutSchema.parse(body);
+    const { registrationId, ticketType } = PrepareCheckoutSchema.parse(body);
 
-    let amount: number;
-    switch (ticketType) {
-      case "FULL":
-        amount = 300;
-        break;
-      case "TWO_DAY":
-        amount = 200;
-        break;
-      case "ONE_DAY":
-        amount = 100;
-        break;
-      default:
-        return NextResponse.json({ error: 'Invalid ticket type' }, { status: 400 });
+    const ticketInfo = ticketConfig[ticketType];
+    if (!ticketInfo) {
+      return NextResponse.json({ error: 'Invalid ticket type' }, { status: 400 });
     }
+
+    const { amount, currency } = ticketInfo;
 
     const data = querystring.stringify({
       'entityId': '8a8294174b7ecb28014b9699220015ca',
@@ -79,7 +80,7 @@ export async function POST(req: Request) {
       postRequest.end();
     });
 
-    return NextResponse.json({ checkoutId });
+    return NextResponse.json({ checkoutId, amount, currency });
   } catch (error: unknown) {
     console.error('Error preparing checkout:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

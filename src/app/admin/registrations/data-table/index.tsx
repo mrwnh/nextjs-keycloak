@@ -82,7 +82,7 @@ export function DataTable<TData, TValue>({
         <div className="flex space-x-2">
           <Button
             variant="outline"
-            onClick={() => onBulkAction("approve", table.getFilteredSelectedRowModel().rows.map(row => row.original))}
+            onClick={() => onBulkAction("APPROVED", table.getFilteredSelectedRowModel().rows.map(row => row.original))}
             disabled={table.getFilteredSelectedRowModel().rows.length === 0}
           >
             Approve Selected

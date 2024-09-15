@@ -142,8 +142,8 @@ export const columns: ColumnDef<Registration>[] = [
               Copy registration ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => registration.onStatusUpdate("approve")}>Approve registration</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => registration.onStatusUpdate("reject")}>Reject registration</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => registration.onStatusUpdate("APPROVED")}>Approve registration</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => registration.onStatusUpdate("REJECTED")}>Reject registration</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )

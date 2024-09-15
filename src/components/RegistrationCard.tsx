@@ -125,15 +125,15 @@ export default function RegistrationCard({ registration: initialRegistration, on
 
   const handlePayNow = async () => {
     try {
+      const ticketType = currentRegistration.payment?.ticketType || 'FULL';
       const response = await fetch('/api/prepare-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          currency: currentRegistration.payment?.currency || 'EUR',
           registrationId: currentRegistration.id,
-          ticketType: currentRegistration.payment?.ticketType || 'FULL',
+          ticketType,
         }),
       });
 
@@ -142,7 +142,8 @@ export default function RegistrationCard({ registration: initialRegistration, on
         throw new Error(errorData.error || 'Failed to prepare checkout');
       }
 
-      const { checkoutId } = await response.json();
+      const { checkoutId, amount, currency } = await response.json();
+      // You can use amount and currency here if needed
       window.location.href = `https://eu-test.oppwa.com/v1/paymentWidgets.js?checkoutId=${checkoutId}`;
     } catch (error) {
       console.error('Error initiating payment:', error);
