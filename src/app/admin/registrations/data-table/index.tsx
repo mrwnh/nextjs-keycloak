@@ -89,7 +89,7 @@ export function DataTable<TData, TValue>({
           </Button>
           <Button
             variant="outline"
-            onClick={() => onBulkAction("reject", table.getFilteredSelectedRowModel().rows.map(row => row.original))}
+            onClick={() => onBulkAction("REJECTED", table.getFilteredSelectedRowModel().rows.map(row => row.original))}
             disabled={table.getFilteredSelectedRowModel().rows.length === 0}
           >
             Reject Selected

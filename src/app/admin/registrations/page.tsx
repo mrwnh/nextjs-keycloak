@@ -84,10 +84,10 @@ export default function AdminRegistrations() {
     }
   }, [toast, handleStatusUpdate])
 
-  const handleRegistrationUpdate = useCallback((updatedRegistration: Registration) => {
+  const handleRegistrationUpdate = useCallback((updatedRegistration: Omit<Registration, 'payment'>) => {
     setIsLoading(true);
     fetch(`/api/admin/registrations/${updatedRegistration.id}`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -120,6 +120,54 @@ export default function AdminRegistrations() {
       .finally(() => {
         setIsLoading(false);
       });
+  }, [toast]);
+
+  const handleApprove = useCallback(async (id: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/admin/update-registration-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: 'APPROVED' }),
+      });
+      if (!response.ok) throw new Error('Failed to approve registration');
+      const updatedRegistration = await response.json();
+      setRegistrations(prev => prev.map(reg => reg.id === id ? updatedRegistration : reg));
+      return updatedRegistration;
+    } catch (error) {
+      console.error('Error approving registration:', error);
+      toast({
+        title: "Error",
+        description: "Failed to approve registration",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  const handleReject = useCallback(async (id: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/admin/update-registration-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: 'REJECTED' }),
+      });
+      if (!response.ok) throw new Error('Failed to reject registration');
+      const updatedRegistration = await response.json();
+      setRegistrations(prev => prev.map(reg => reg.id === id ? updatedRegistration : reg));
+      return updatedRegistration;
+    } catch (error) {
+      console.error('Error rejecting registration:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reject registration",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }, [toast]);
 
   useEffect(() => {
@@ -181,8 +229,8 @@ export default function AdminRegistrations() {
       <Slideover 
         isOpen={slideoverOpen} 
         onClose={() => setSlideoverOpen(false)}
-        onApprove={() => handleStatusUpdate(selectedRegistration?.id ?? "", "APPROVED")}
-        onReject={() => handleStatusUpdate(selectedRegistration?.id ?? "", "REJECTED")}
+        onApprove={handleApprove}
+        onReject={handleReject}
         onUpdate={(updatedRegistration: any) => handleRegistrationUpdate(updatedRegistration)}
         isLoading={isLoading}
         registration={selectedRegistration as Registration}

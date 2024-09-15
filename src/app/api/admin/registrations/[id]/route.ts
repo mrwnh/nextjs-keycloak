@@ -28,7 +28,7 @@ const UpdateRegistrationSchema = z.object({
   }).optional(),
 });
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+async function updateRegistration(req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user) {
@@ -37,16 +37,12 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
   try {
     const data = await req.json();
-    const validatedData = UpdateRegistrationSchema.parse(data);
+    const { payment, ...registrationData } = data;
+    const validatedData = UpdateRegistrationSchema.omit({ payment: true }).parse(registrationData);
 
     const updatedRegistration = await prisma.registration.update({
       where: { id: params.id },
-      data: {
-        ...validatedData,
-        payment: validatedData.payment ? {
-          update: validatedData.payment
-        } : undefined,
-      },
+      data: validatedData,
       include: {
         comments: true,
         payment: true,
@@ -67,3 +63,6 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     return NextResponse.json({ error: 'Failed to update registration' }, { status: 500 });
   }
 }
+
+export const PUT = updateRegistration;
+export const PATCH = updateRegistration;
