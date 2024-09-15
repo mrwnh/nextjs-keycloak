@@ -5,11 +5,11 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RegistrationForm } from '@/components/form';
-import { PaymentConfirmationModal } from '@/components/payment-confirmation';
 import { Registration, RegistrationStatus, PaymentStatus, TicketType } from '@/lib/schemas';
-import { formatDate } from '@/utils/dateFormatter';
 import { toast } from '@/hooks/use-toast';
 import { User, Phone, MapPin, Award, Building, Briefcase, CreditCard, DollarSign, Calendar, Edit, AlertCircle } from 'lucide-react';
+import TicketPaymentCTA from '@/components/TicketPaymentCTA';
+import { ticketConfig } from '../app/api/prepare-checkout/route';
 
 interface RegistrationCardProps {
   registration: Registration;
@@ -23,6 +23,20 @@ export default function RegistrationCard({ registration: initialRegistration, on
   const [paymentDetails, setPaymentDetails] = useState<{ amount: number; currency: string; lastFourDigits: string } | null>(null);
 
   useEffect(() => {
+    const fetchPaymentInfo = async () => {
+      try {
+        const response = await fetch(`/api/payments/${currentRegistration.id}`);
+        if (response.ok) {
+          const paymentData = await response.json();
+          setCurrentRegistration(prev => ({ ...prev, payment: paymentData }));
+        }
+      } catch (error) {
+        console.error('Error fetching payment info:', error);
+      }
+    };
+
+    fetchPaymentInfo();
+
     const urlParams = new URLSearchParams(window.location.search);
     const resourcePath = urlParams.get('resourcePath');
     const id = urlParams.get('id');
@@ -31,7 +45,7 @@ export default function RegistrationCard({ registration: initialRegistration, on
       fetch(`/api/payment-result?resourcePath=${resourcePath}&id=${id}`)
         .then(response => response.json())
         .then(result => {
-          if (result.updatedRegistration) {
+          if (result.success) {
             setCurrentRegistration(result.updatedRegistration);
             setPaymentDetails({
               amount: result.updatedRegistration.payment?.amount || 0,
@@ -40,6 +54,7 @@ export default function RegistrationCard({ registration: initialRegistration, on
             });
             setIsPaymentModalOpen(true);
             onUpdate(result.updatedRegistration);
+            window.history.replaceState({}, '', result.redirectUrl);
           } else {
             console.error('Payment failed:', result.error);
             toast({
@@ -58,7 +73,7 @@ export default function RegistrationCard({ registration: initialRegistration, on
           });
         });
     }
-  }, [onUpdate]);
+  }, [currentRegistration.id, onUpdate]);
 
   const handleUpdate = async (values: Partial<Registration>) => {
     try {
@@ -126,25 +141,59 @@ export default function RegistrationCard({ registration: initialRegistration, on
   const handlePayNow = async () => {
     try {
       const ticketType = currentRegistration.payment?.ticketType || 'FULL';
+      const currency = currentRegistration.payment?.currency || 'EUR';
       const response = await fetch('/api/prepare-checkout', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          registrationId: currentRegistration.id,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          registrationId: currentRegistration.id, 
           ticketType,
+          currency,
+          amount: currentRegistration.payment?.amount || ticketConfig[ticketType].amount
         }),
       });
+      const data = await response.json();
+      if (data.checkoutId) {
+        // Define wpwlOptions before loading the script
+        (window as any).wpwlOptions = {
+          style: "card",
+          locale: "en"
+        };
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to prepare checkout');
+        // Create a form for the payment widget
+        const form = document.createElement('form');
+        form.action = `${process.env.NEXT_PUBLIC_URL}/api/payment-result`;
+        form.className = "paymentWidgets";
+        form.setAttribute('data-brands', "VISA MASTER AMEX APPLE");
+
+        // Replace the current content with the payment form
+        const container = document.getElementById('payment-form-container');
+        if (container) {
+          container.innerHTML = '';
+          container.appendChild(form);
+
+          // Load the payment widget script
+          const script = document.createElement('script');
+          script.src = `https://eu-test.oppwa.com/v1/paymentWidgets.js?checkoutId=${data.checkoutId}`;
+          script.async = true;
+          script.onload = () => {
+            // The script has loaded, now we can initialize the payment form
+            if (typeof window.paymentWidgets === 'function') {
+              window.paymentWidgets(form);
+            } else {
+              console.error('Payment widget script loaded, but paymentWidgets function not found');
+              toast({
+                title: "Error",
+                description: "An error occurred while loading the payment form. Please try again later.",
+                variant: "destructive",
+              });
+            }
+          };
+          document.body.appendChild(script);
+        }
+      } else {
+        throw new Error('Failed to prepare checkout');
       }
-
-      const { checkoutId, amount, currency } = await response.json();
-      // You can use amount and currency here if needed
-      window.location.href = `https://eu-test.oppwa.com/v1/paymentWidgets.js?checkoutId=${checkoutId}`;
     } catch (error) {
       console.error('Error initiating payment:', error);
       toast({
@@ -224,57 +273,6 @@ export default function RegistrationCard({ registration: initialRegistration, on
                   <InfoItem icon={Building} label="Company" value={currentRegistration.company} />
                   <InfoItem icon={Briefcase} label="Designation" value={currentRegistration.designation} />
                 </div>
-                <div className="mt-4">
-                  <h3 className="font-semibold text-[#162851] dark:text-white text-lg mb-4">Payment Information</h3>
-                  <div className="bg-gray-50 p-4 rounded-lg shadow-inner dark:bg-gray-900">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <InfoItem 
-                        icon={CreditCard} 
-                        label="Payment Status" 
-                        value={currentRegistration.payment?.status || 'N/A'} 
-                      />
-                      <InfoItem 
-                        icon={Award} 
-                        label="Ticket Type" 
-                        value={currentRegistration.payment?.ticketType || 'N/A'} 
-                      />
-                      <InfoItem 
-                        icon={DollarSign} 
-                        label="Amount" 
-                        value={currentRegistration.payment?.amount 
-                          ? `${currentRegistration.payment.amount} ${currentRegistration.payment.currency}` 
-                          : 'N/A'
-                        } 
-                      />
-                      <InfoItem 
-                        icon={Calendar} 
-                        label="Payment Date" 
-                        value={currentRegistration.payment?.paymentDate 
-                          ? formatDate(currentRegistration.payment.paymentDate)
-                          : 'N/A'
-                        } 
-                      />
-                    </div>
-                  </div>
-                </div>
-                {currentRegistration.status === 'APPROVED' && currentRegistration.payment?.status === 'UNPAID' && (
-                  <motion.div 
-                    className="mt-6 bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded-r-lg"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <div className="flex items-center">
-                      <AlertCircle className="h-6 w-6 text-yellow-500 mr-2" />
-                      <p className="font-semibold text-[#162851]">Payment Required</p>
-                    </div>
-                    <p className="mt-2 text-[#162851]">Your registration has been approved. Please complete your payment to secure your spot.</p>
-                    <Button onClick={handlePayNow} className="mt-4 bg-[#66cada] hover:bg-[#4fa8b8] text-[#162851] font-semibold transition-colors duration-200">
-                      Pay Now
-                    </Button>
-                  </motion.div>
-                )}
-                <div id="payment-form-container" className="mt-4"></div>
                 <div className="mt-6 flex justify-end">
                   <Button 
                     onClick={() => setIsEditing(true)} 
@@ -289,11 +287,19 @@ export default function RegistrationCard({ registration: initialRegistration, on
           </AnimatePresence>
         </CardContent>
       </Card>
-      <PaymentConfirmationModal
-        isOpen={isPaymentModalOpen && paymentDetails !== null}
-        onClose={() => setIsPaymentModalOpen(false)}
-        paymentDetails={paymentDetails || { amount: 0, currency: '', lastFourDigits: '' }}
-      />
+      <TicketPaymentCTA
+                  ticketType={currentRegistration.payment?.ticketType || null}
+                  amount={currentRegistration.payment?.amount || 100}
+                  currency={currentRegistration.payment?.currency || 'EUR'}
+                  paymentStatus={currentRegistration.payment?.status || 'UNPAID'}
+                  registrationStatus={currentRegistration.status}
+                  registrationId={currentRegistration.id}
+                  onPayNow={handlePayNow}
+                  onDownloadReceipt={() => {/* Implement receipt download */}}
+                  onDownloadTicket={() => {/* Implement ticket download */}}
+                  onDownloadQRCode={() => {/* Implement QR code download */}}
+                />
+                <div id="payment-form-container" className="mt-4"></div>
     </>
   );
 }

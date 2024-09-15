@@ -108,18 +108,7 @@ export default function Register() {
             registration={registration} 
             onUpdate={(updatedRegistration) => setRegistration(updatedRegistration as Registration)}
           />
-          <TicketPaymentCTA
-            ticketType={registration.payment?.ticketType || null}
-            amount={registration.payment?.amount || null}
-            currency={registration.payment?.currency || null}
-            paymentStatus={registration.payment?.status || 'UNPAID'}
-            registrationStatus={registration.status}
-            registrationId={registration.id}
-            onPayNow={() => {/* Implement payment logic */}}
-            onDownloadReceipt={() => {/* Implement receipt download */}}
-            onDownloadTicket={() => {/* Implement ticket download */}}
-            onDownloadQRCode={() => {/* Implement QR code download */}}
-          />
+         
         </div>
       ) : (
         <Card className="w-full max-w-4xl mx-auto bg-white dark:bg-gray-900 shadow-lg">
@@ -136,7 +125,7 @@ export default function Register() {
                 firstName: session?.user?.name?.split(" ")[0] || "",
                 lastName: session?.user?.name?.split(" ").slice(1).join(" ") || "",
                 email: session?.user?.email || "",
-                imageUrl: "", // Added missing property
+                imageUrl: "", 
                 phoneNumber: "",
                 company: "",
                 designation: "",

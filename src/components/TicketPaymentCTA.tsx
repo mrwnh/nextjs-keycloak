@@ -13,7 +13,6 @@ interface PaymentDetailsBase {
   lastFourDigits: string;
 }
 
-
 interface TicketPaymentProps {
   ticketType: string | null;
   amount: number | null;
@@ -37,6 +36,18 @@ const ticketConfig = {
   PASS: { amount: 150, currency: 'EUR' },
 };
 
+declare global {
+  interface Window {
+    paymentWidgets: (form: HTMLFormElement) => void;
+    wpwlOptions?: {
+      style: string;
+      locale: string;
+      onReady: () => void;
+      onError: (error: any) => void;
+    };
+  }
+}
+
 export default function TicketPaymentCTA({ 
   ticketType, 
   paymentStatus,
@@ -53,18 +64,65 @@ export default function TicketPaymentCTA({
   const ticketInfo = ticketType ? ticketConfig[ticketType as keyof typeof ticketConfig] : null;
 
   const handlePayNow = async () => {
-    setIsPaymentModalOpen(true);
-    const response = await fetch('/api/prepare-checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ registrationId, ticketType }),
-    });
-    const data = await response.json();
-    if (data.checkoutId) {
-      window.location.href = `https://eu-test.oppwa.com/v1/paymentWidgets.js?checkoutId=${data.checkoutId}`;
-    } else {
-      console.error('Failed to prepare checkout');
-      setIsPaymentModalOpen(false);
+    if (!ticketType || !ticketInfo) {
+      console.error('Invalid ticket type or missing ticket info');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/prepare-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          registrationId,
+          ticketType,
+          currency: ticketInfo.currency,
+          amount: ticketInfo.amount
+        }),
+      });
+      const data = await response.json();
+      if (data.checkoutId) {
+        console.log('Checkout ID received:', data.checkoutId);
+        
+        // Create a form for the payment widget
+        const form = document.createElement('form');
+        form.action = `${process.env.NEXT_PUBLIC_URL}/api/payment-result`;
+        form.className = "paymentWidgets";
+        form.setAttribute('data-brands', "VISA MASTER AMEX");
+
+        // Replace the current content with the payment form
+        const container = document.getElementById('payment-container');
+        if (container) {
+          container.innerHTML = '';
+          container.appendChild(form);
+
+          // Load the payment widget script
+          const script = document.createElement('script');
+          script.src = `https://eu-test.oppwa.com/v1/paymentWidgets.js?checkoutId=${data.checkoutId}`;
+          script.async = true;
+          
+          // Append the script to the document body
+          document.body.appendChild(script);
+
+          // Define wpwlOptions before the script loads
+          window.wpwlOptions = {
+            style: "card",
+            locale: "en",
+            onReady: function() {
+              console.log('Payment widget is ready');
+            },
+            onError: function(error: any) {
+              console.error('Payment widget error:', error);
+            }
+          };
+        }
+      } else {
+        console.error('Failed to prepare checkout:', data);
+        alert('An error occurred while preparing the checkout. Please try again later or contact support.');
+      }
+    } catch (error) {
+      console.error('Error preparing checkout:', error);
+      alert('An error occurred while preparing the checkout. Please try again later or contact support.');
     }
   };
 
@@ -90,13 +148,12 @@ export default function TicketPaymentCTA({
         </CardHeader>
         <CardContent className="space-y-4 p-6">
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-[#a2a5ae]">Ticket Type</span>
-            <span className="font-semibold text-[#162851]">{ticketType || 'N/A'}</span>
+            <span className="text-sm font-medium text-[#a2a5ae] dark:text-white">Ticket Type</span>
+            <span className="font-semibold text-[#162851] dark:text-white">{ticketType || 'N/A'}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-[#a2a5ae]">Amount</span>
-            <span className="font-semibold text-[#162851] flex items-center">
-              <DollarSign className="h-4 w-4 mr-1 text-[#66cada]" />
+            <span className="text-sm font-medium text-[#a2a5ae] dark:text-white">Amount</span>
+            <span className="font-semibold text-[#162851] dark:text-white flex items-center">
               {ticketInfo ? `${ticketInfo.amount} ${ticketInfo.currency}` : 'N/A'}
             </span>
           </div>
@@ -180,6 +237,7 @@ export default function TicketPaymentCTA({
         onClose={() => setPaymentConfirmation(null)}
         paymentDetails={paymentConfirmation || { amount: 0, currency: '', lastFourDigits: '' }}
       />
+      <div id="payment-container"></div>
     </>
   );
 }

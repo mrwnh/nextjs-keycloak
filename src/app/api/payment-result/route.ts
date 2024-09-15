@@ -7,12 +7,6 @@ import https from 'https';
 const prisma = new PrismaClient();
 
 export async function GET(req: Request) {
-  const session = await getServerSession(authOptions);
-
-  if (!session || !session.user) {
-    return NextResponse.redirect('/api/auth/signin');
-  }
-
   const { searchParams } = new URL(req.url);
   const id = searchParams.get('id');
   const resourcePath = searchParams.get('resourcePath');
@@ -27,7 +21,7 @@ export async function GET(req: Request) {
     if (paymentStatus.result.code === '000.100.110') {
       // Payment successful
       const updatedRegistration = await prisma.registration.update({
-        where: { email: session.user.email ?? '' },
+        where: { id },
         data: {
           payment: {
             update: {
@@ -44,20 +38,18 @@ export async function GET(req: Request) {
         },
       });
 
-      return NextResponse.json({
-        success: true,
-        updatedRegistration,
+      return NextResponse.json({ 
+        success: true, 
+        redirectUrl: `${process.env.NEXTAUTH_URL}/payment-success?id=${id}`,
+        updatedRegistration 
       });
     } else {
       // Payment failed
-      return NextResponse.json({
-        success: false,
-        error: 'Payment failed',
-      });
+      return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/payment-failed?id=${id}`);
     }
   } catch (error) {
     console.error('Error processing payment result:', error);
-    return NextResponse.redirect(`/register?paymentStatus=error`);
+    return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/payment-error?id=${id}`);
   }
 }
 
