@@ -3,6 +3,14 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../api/auth/[...nextauth]/route";
 import https from 'https';
 import querystring from 'querystring';
+import { TicketType } from '@/lib/schemas';
+import { z } from 'zod';
+
+const PrepareCheckoutSchema = z.object({
+  currency: z.string(),
+  registrationId: z.string(),
+  ticketType: z.enum(["FULL", "FREE", "VVIP", "VIP", "PASS", "ONE_DAY", "TWO_DAY"]),
+});
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -13,27 +21,17 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    console.log('Received body:', body);
-
-    const { currency, registrationId, ticketType } = body;
-    const missingFields: string[] = [];
-    if (!currency) missingFields.push('currency');
-    if (!registrationId) missingFields.push('registrationId');
-    if (!ticketType) missingFields.push('ticketType');
-
-    if (missingFields.length > 0) {
-      return NextResponse.json({ error: `Missing required fields: ${missingFields.join(', ')}` }, { status: 400 });
-    }
+    const { currency, registrationId, ticketType } = PrepareCheckoutSchema.parse(body);
 
     let amount: number;
     switch (ticketType) {
-      case 'Full Access':
+      case "FULL":
         amount = 300;
         break;
-      case '2 days':
+      case "TWO_DAY":
         amount = 200;
         break;
-      case '1 day':
+      case "ONE_DAY":
         amount = 100;
         break;
       default:

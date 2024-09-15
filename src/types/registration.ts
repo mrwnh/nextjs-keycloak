@@ -1,6 +1,6 @@
 export type Registration = {
   id: string;
-  registrationType: "Visitor" | "Sponsor" | "Speaker" | "Media";
+  registrationType: "SPONSOR" | "SPEAKER" | "MEDIA" | "VISITOR" | "OTHERS";
   firstName: string;
   lastName: string;
   email: string;

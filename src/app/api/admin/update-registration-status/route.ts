@@ -2,14 +2,14 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { PrismaClient } from '@prisma/client';
-import { Registration } from "@/lib/schemas";
+import { RegistrationStatus } from "@/lib/schemas";
 import { z } from 'zod';
 
 const prisma = new PrismaClient();
 
 const UpdateStatusSchema = z.object({
   id: z.string().cuid(),
-  status: z.enum(['approve', 'reject'])
+  status: z.enum(['APPROVED', 'REJECTED'])
 });
 
 export async function POST(req: Request) {
@@ -25,7 +25,9 @@ export async function POST(req: Request) {
 
     const updatedRegistration = await prisma.registration.update({
       where: { id: validatedData.id },
-      data: { status: validatedData.status === 'approve' ? 'approved' : 'rejected' },
+      data: { 
+        status: validatedData.status,
+      },
     });
 
     return NextResponse.json(updatedRegistration);

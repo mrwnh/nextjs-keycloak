@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from '../../../auth/[...nextauth]/route'
 import { Prisma, PrismaClient } from '@prisma/client';
-import { Registration } from "../../../../../lib/schemas";
+import { RegistrationStatus, PaymentStatus, TicketType } from "@/lib/schemas";
 import { z } from 'zod';
 
 const prisma = new PrismaClient();
@@ -15,12 +15,12 @@ const UpdateRegistrationSchema = z.object({
   company: z.string().min(2).optional(),
   designation: z.string().min(2).optional(),
   city: z.string().min(2).optional(),
-  status: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
+  status: z.enum(['APPROVED', 'REJECTED', 'PENDING']).optional(),
   imageUrl: z.string().url().optional(),
   qrCodeUrl: z.string().url().nullable().optional(),
   payment: z.object({
-    status: z.enum(['UNPAID', 'PAID', 'WAIVED']).optional(),
-    ticketType: z.string().optional(),
+    status: z.enum(['UNPAID', 'PAID', 'WAIVED', 'REFUNDED']).optional(),
+    ticketType: z.enum(['FULL', 'FREE', 'VVIP', 'VIP', 'PASS', 'ONE_DAY', 'TWO_DAY']).optional(),
     lastFourDigits: z.string().length(4).optional(),
     paymentDate: z.string().datetime().optional(),
     amount: z.number().positive().optional(),
@@ -31,7 +31,9 @@ const UpdateRegistrationSchema = z.object({
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
 
-
+  if (!session || !session.user) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
 
   try {
     const data = await req.json();

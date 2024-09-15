@@ -1,39 +1,29 @@
 'use client';
 
 import { useSession } from "next-auth/react";
-import { SetStateAction, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import RegistrationCard from "@/components/RegistrationCard";
 import { RegistrationForm } from "@/components/form";
 import { RegistrationFormSkeleton } from "@/components/register-skeleton";
-import { Registration, registrationSchema } from "@/lib/schemas";
+import { Registration, registrationSchema, RegistrationStatus, PaymentStatus, TicketType } from "@/lib/schemas";
 import TicketPaymentCTA from "@/components/TicketPaymentCTA";
+import { toast } from "@/hooks/use-toast";
+import { formSchema } from "@/components/form";
 
 export default function Register() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [registration, setRegistration] = useState<Registration | null>(null);
   const [isRTL, setIsRTL] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/api/auth/signin?callbackUrl=/register");
     } else if (status === "authenticated" && session?.user) {
-      const [firstName, ...lastNameParts] = (session.user.name || "").split(" ");
-      const initialData = {
-        registrationType: "Visitor",
-        firstName,
-        lastName: lastNameParts.join(" "),
-        email: session.user.email || "",
-        phoneNumber: "",
-        imageUrl: "",
-        company: "",
-        designation: "",
-        city: "",
-      };
-
       fetch('/api/check-registration', {
         method: 'POST',
         headers: {
@@ -46,12 +36,16 @@ export default function Register() {
           if (data.registration) {
             setRegistration(data.registration);
           }
+          setIsLoading(false);
         })
-        .catch(error => console.error('Error checking registration:', error));
+        .catch(error => {
+          console.error('Error checking registration:', error);
+          setIsLoading(false);
+        });
+    } else if (status !== "loading") {
+      setIsLoading(false);
     }
   }, [status, session, router]);
-
-  const formSchema = registrationSchema;
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
@@ -60,12 +54,17 @@ export default function Register() {
         return;
       }
 
+      const registrationData = {
+        ...values,
+        qrCodeUrl: values.qrCodeUrl || null, // Set to null if not provided
+      };
+
       const response = await fetch('/api/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(registrationData),
       });
 
       if (response.ok) {
@@ -75,36 +74,40 @@ export default function Register() {
       } else {
         const errorData = await response.json();
         console.error('Registration failed:', errorData.error);
-        // Show error message to user
+        toast({
+          title: "Registration Failed",
+          description: errorData.error || "An error occurred during registration",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error during registration:', error);
-      // Show error message to user
+      toast({
+        title: "Registration Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className={`container mx-auto p-4 min-h-screen flex items-center justify-center bg-background ${isRTL ? 'rtl' : 'ltr'}`}>
+        <RegistrationFormSkeleton />
+      </div>
+    );
+  }
+
   return (
     <div className={`container mx-auto p-4 min-h-screen flex items-center justify-center bg-background ${isRTL ? 'rtl' : 'ltr'}`}>
-      {status === "loading" ? (
-        <RegistrationFormSkeleton />
-      ) : status === "unauthenticated" ? (
-        null // The useEffect will handle redirection
+      {status === "unauthenticated" ? (
+        null 
       ) : registration ? (
-        <div className="w-full max-w-4xl mx-auto">
-          <Card className="mb-8 bg-white dark:bg-gray-900 shadow-lg">
-            <CardHeader className="text-center">
-              <CardTitle className="text-4xl font-bold text-primary mb-2">Registration Details</CardTitle>
-              <CardDescription className="text-xl text-muted-foreground">
-                Your RFF 2025 Registration Information
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <RegistrationCard 
-                registration={registration} 
-                onUpdate={(updatedRegistration) => setRegistration(updatedRegistration as Registration)}
-              />
-            </CardContent>
-          </Card>
+        <div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
+          <RegistrationCard 
+            registration={registration} 
+            onUpdate={(updatedRegistration) => setRegistration(updatedRegistration as Registration)}
+          />
           <TicketPaymentCTA
             ticketType={registration.payment?.ticketType || null}
             amount={registration.payment?.amount || null}
@@ -129,10 +132,11 @@ export default function Register() {
           <CardContent>
             <RegistrationForm
               initialData={{
-                registrationType: "Visitor",
+                registrationType: "VISITOR",
                 firstName: session?.user?.name?.split(" ")[0] || "",
                 lastName: session?.user?.name?.split(" ").slice(1).join(" ") || "",
                 email: session?.user?.email || "",
+                imageUrl: "", // Added missing property
                 phoneNumber: "",
                 company: "",
                 designation: "",

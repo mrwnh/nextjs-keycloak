@@ -25,8 +25,8 @@ import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "lucide-react";
 
-const formSchema = z.object({
-  registrationType: z.enum(["Sponsor", "Speaker", "Media", "Visitor"]),
+export const formSchema = z.object({
+  registrationType: z.enum(["SPEAKER", "SPONSOR", "VISITOR", "MEDIA", "OTHERS"]),
   firstName: z.string().min(2, "First name must be at least 2 characters."),
   lastName: z.string().min(2, "Last name must be at least 2 characters."),
   email: z.string().email("Invalid email address."),
@@ -34,7 +34,9 @@ const formSchema = z.object({
   company: z.string().min(2, "Company name must be at least 2 characters."),
   designation: z.string().min(2, "Designation must be at least 2 characters."),
   city: z.string().min(2, "City must be at least 2 characters."),
-  imageUrl: z.string().optional(),
+  imageUrl: z.string().min(1, "Profile picture is required."),
+  qrCodeUrl: z.string().optional(),
+  status: z.enum(["APPROVED", "REJECTED", "PENDING"]).optional(),
 });
 
 type RegistrationFormProps = {
@@ -48,7 +50,7 @@ export function RegistrationForm({ initialData, onSubmit, isEmailDisabled = fals
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
-      registrationType: "Visitor",
+      registrationType: "VISITOR",
       firstName: "",
       lastName: "",
       email: "",
@@ -104,10 +106,11 @@ export function RegistrationForm({ initialData, onSubmit, isEmailDisabled = fals
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="Sponsor">Sponsor</SelectItem>
-                  <SelectItem value="Speaker">Speaker</SelectItem>
-                  <SelectItem value="Media">Media</SelectItem>
-                  <SelectItem value="Visitor">Visitor</SelectItem>
+                  <SelectItem value="SPONSOR">Sponsor</SelectItem>
+                  <SelectItem value="SPEAKER">Speaker</SelectItem>
+                  <SelectItem value="MEDIA">Media</SelectItem>
+                  <SelectItem value="VISITOR">Visitor</SelectItem>
+                  <SelectItem value="OTHERS">Others</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -237,7 +240,7 @@ export function RegistrationForm({ initialData, onSubmit, isEmailDisabled = fals
           )}
         />
         <Button type="submit" disabled={isUploading}>
-          {isUploading ? 'Uploading...' : isEmailDisabled ? 'Save Changes' : 'Register'}
+          {isUploading ? 'Uploading...' : form.formState.defaultValues?.email ? 'Save Changes' : 'Register'}
         </Button>
       </form>
     </Form>

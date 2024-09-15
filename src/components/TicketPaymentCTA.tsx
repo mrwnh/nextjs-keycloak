@@ -168,7 +168,7 @@ export default function TicketPaymentCTA({
       <PaymentConfirmationModal
         isOpen={!!paymentConfirmation}
         onClose={() => setPaymentConfirmation(null)}
-        paymentDetails={paymentConfirmation as PaymentDetailsBase}
+        paymentDetails={paymentConfirmation || { amount: 0, currency: '', lastFourDigits: '' }}
       />
     </>
   );

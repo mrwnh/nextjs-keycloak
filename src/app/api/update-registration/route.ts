@@ -22,17 +22,17 @@ export async function PUT(req: Request) {
     const data = await req.json();
     const validatedData = UpdateRegistrationSchema.parse(data);
 
+    const { id, ...updateData } = validatedData;
+
+    if (!id) {
+      return NextResponse.json({ error: 'Registration ID is required' }, { status: 400 });
+    }
+
     const updatedRegistration = await prisma.registration.update({
-      where: { id: validatedData.id },
-      data: {
-        registrationType: validatedData.registrationType,
-        firstName: validatedData.firstName,
-        lastName: validatedData.lastName,
-        phoneNumber: validatedData.phoneNumber,
-        company: validatedData.company,
-        designation: validatedData.designation,
-        city: validatedData.city,
-        imageUrl: validatedData.imageUrl,
+      where: { id },
+      data: updateData,
+      include: {
+        payment: true,
       },
     });
 

@@ -11,10 +11,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Registration, PaymentStatusType } from "@/lib/schemas"
+import { Registration, PaymentStatusType, RegistrationStatusType, TicketTypeType, RegistrationType } from "@/lib/schemas"
 import { PhoneInput } from "@/components/ui/phone-input"
-
-
+import { formatDate } from "@/utils/dateFormatter"
 
 type SlideoverProps = {
   isOpen: boolean;
@@ -31,7 +30,7 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
   const [editedRegistration, setEditedRegistration] = useState<Registration | null>(null);
   const [newComment, setNewComment] = useState('');
   const [showPaymentRequest, setShowPaymentRequest] = useState(false);
-  const [selectedTicketType, setSelectedTicketType] = useState<string | null>(null);
+  const [selectedTicketType, setSelectedTicketType] = useState<TicketTypeType | null>(null);
 
   useEffect(() => {
     if (registration) {
@@ -48,7 +47,11 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
 
   const handleSave = async () => {
     if (editedRegistration) {
-      await onUpdate(editedRegistration);
+      const updatedRegistration = {
+        ...editedRegistration,
+        status: editedRegistration.status as RegistrationStatusType,
+      };
+      await onUpdate(updatedRegistration);
       setIsEditing(false);
     }
   };
@@ -124,21 +127,11 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
 
   if (!registration) return null;
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
+    switch (status.toUpperCase()) {
+      case 'APPROVED': return 'bg-green-100 text-green-800';
+      case 'REJECTED': return 'bg-red-100 text-red-800';
+      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -233,7 +226,7 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
                                 <p className="text-sm text-gray-500">{registration.email}</p>
                                 <div className="mt-2 flex space-x-2">
                                   <Badge variant="secondary" className={getStatusColor(registration.status)}>
-                                    {registration.status}
+                                    {registration.status.toUpperCase()}
                                   </Badge>
                                   <Badge variant="secondary" className={getPaymentStatusColor(editedRegistration?.payment?.status ?? 'UNPAID')}>
                                     {editedRegistration?.payment ? `${editedRegistration.payment.status} - ${editedRegistration.payment.ticketType}` : 'NO PAYMENT'}
@@ -259,11 +252,22 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
                                   <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-500">Registration Type</label>
                                     {isEditing ? (
-                                      <Input
+                                      <Select
                                         name="registrationType"
                                         value={editedRegistration?.registrationType}
-                                        onChange={handleInputChange}
-                                      />
+                                        onValueChange={(value) => handleSelectChange('registrationType', value)}
+                                      >
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Select registration type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="SPONSOR">Sponsor</SelectItem>
+                                          <SelectItem value="SPEAKER">Speaker</SelectItem>
+                                          <SelectItem value="MEDIA">Media</SelectItem>
+                                          <SelectItem value="VISITOR">Visitor</SelectItem>
+                                          <SelectItem value="OTHERS">Others</SelectItem>
+                                        </SelectContent>
+                                      </Select>
                                     ) : (
                                       <p className="text-sm text-gray-900">{registration.registrationType}</p>
                                     )}
@@ -415,7 +419,7 @@ export const Slideover = ({ isOpen, onClose, onApprove, onReject, onUpdate, isLo
                                 <div className="space-y-4">
                                   <Select
                                     value={selectedTicketType || ''}
-                                    onValueChange={(value) => setSelectedTicketType(value)}
+                                    onValueChange={(value) => setSelectedTicketType(value as TicketTypeType)}
                                   >
                                     <SelectTrigger>
                                       <SelectValue placeholder="Select ticket type" />

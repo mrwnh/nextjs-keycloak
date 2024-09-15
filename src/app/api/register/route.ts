@@ -2,22 +2,11 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { PrismaClient } from '@prisma/client';
-import { registrationSchema, RegistrationInput } from "@/lib/schemas";
+import { registrationSchema, RegistrationInput, PaymentStatus, RegistrationStatus } from "@/lib/schemas";
 import { z } from "zod";
 import QRCode from 'qrcode';
 import { put } from '@vercel/blob';
 import { sendConfirmationEmail } from '@/utils/email';
-
-// Add this type declaration at the top of the file
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string;
-      email: string;
-      name: string;
-    }
-  }
-}
 
 const prisma = new PrismaClient();
 
@@ -36,10 +25,10 @@ export async function POST(req: Request) {
     let qrCodeUrl = null;
 
     // Generate QR code
-    const qrCodeBuffer = await QRCode.toBuffer(`${process.env.NEXTAUTH_URL}/registration/${session.user.id}/view`);
+    const qrCodeBuffer = await QRCode.toBuffer(`${process.env.NEXTAUTH_URL}/registration/${session.user.email}/view`);
 
     // Upload QR code to Vercel Blob
-    const { url } = await put(`qr-codes/${session.user.id}.png`, qrCodeBuffer, {
+    const { url } = await put(`qr-codes/${session.user.email}.png`, qrCodeBuffer, {
       access: 'public',
       token: process.env.BLOB_READ_WRITE_TOKEN as string,
     });
@@ -49,12 +38,12 @@ export async function POST(req: Request) {
     const registration = await prisma.registration.create({
       data: {
         ...validatedData,
-        status: 'pending',
+        status: 'PENDING',
         qrCodeUrl,
         payment: {
           create: {
             status: 'UNPAID',
-          },
+          }
         },
       },
       include: {

@@ -3,28 +3,38 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url = env("POSTGRES_PRISMA_URL") 
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
   directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
+enum RegistrationType {
+  SPEAKER
+  SPONSOR
+  VISITOR
+  MEDIA
+  OTHERS
+}
+
 model Registration {
-  id                String    @id @default(cuid())
-  registrationType  String
+  id                String             @id @default(cuid())
+  registrationType  RegistrationType
   firstName         String
   lastName          String
-  email             String    @unique
+  email             String             @unique
   phoneNumber       String
   company           String
   designation       String
   city              String
-  status            String    @default("pending")
+  status            RegistrationStatus @default(PENDING)
   imageUrl          String?
   qrCodeUrl         String?
   comments          Comment[]
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
   payment           Payment?
+
+  @@index([email])
 }
 
 model Comment {
@@ -34,26 +44,59 @@ model Comment {
   updatedAt      DateTime     @updatedAt
   registration   Registration @relation(fields: [registrationId], references: [id])
   registrationId String
+  author         User         @relation(fields: [authorId], references: [id])
   authorId       String
-  authorName     String
 }
 
 model Payment {
-  id             String       @id @default(cuid())
-  registration   Registration @relation(fields: [registrationId], references: [id])
-  registrationId String       @unique
+  id             String                @id @default(cuid())
+  registration   Registration          @relation(fields: [registrationId], references: [id])
+  registrationId String                @unique
   status         PaymentStatus
-  ticketType     String?
+  ticketType     TicketType?
   lastFourDigits String?
   paymentDate    DateTime?
-  amount         Float?
+  amount         Decimal?              @db.Decimal(10, 2)
   currency       String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  statusHistory  PaymentStatusHistory[]
+}
+
+model User {
+  id       String    @id @default(cuid())
+  name     String
+  email    String    @unique
+  comments Comment[]
+}
+
+model PaymentStatusHistory {
+  id         String        @id @default(cuid())
+  payment    Payment       @relation(fields: [paymentId], references: [id])
+  paymentId  String
+  status     PaymentStatus
+  changedAt  DateTime      @default(now())
 }
 
 enum PaymentStatus {
   UNPAID
   PAID
   WAIVED
+  REFUNDED
+}
+
+enum RegistrationStatus {
+  APPROVED
+  REJECTED
+  PENDING
+}
+
+enum TicketType {
+  FULL
+  FREE
+  VVIP
+  VIP
+  PASS
+  ONE_DAY
+  TWO_DAY
 }

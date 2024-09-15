@@ -64,6 +64,7 @@ export default function AdminRegistrations() {
         const data = await response.json()
         const registrationsWithHandlers = data.map((reg: Registration) => ({
           ...reg,
+          createdAt: new Date(reg.createdAt), // Convert string to Date object
           onNameClick: (registration: Registration) => {
             setSelectedRegistration(registration)
             setSlideoverOpen(true)

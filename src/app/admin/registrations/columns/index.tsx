@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { ArrowUpDown } from "lucide-react"
 
 export type Registration = {
   [x: string]: any
@@ -23,8 +24,11 @@ export type Registration = {
   company: string
   designation: string
   city: string
-  status: "pending" | "approved" | "rejected"
+  status: RegistrationStatus
+  createdAt: Date
 }
+import { formatDate } from "@/utils/dateFormatter";
+import { RegistrationStatus } from "@prisma/client"
 
 export const columns: ColumnDef<Registration>[] = [
   {
@@ -69,7 +73,17 @@ export const columns: ColumnDef<Registration>[] = [
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Status
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
     cell: ({ row }) => {
       const status = row.getValue("status") as string
       return (
@@ -89,6 +103,24 @@ export const columns: ColumnDef<Registration>[] = [
           {paymentStatus}
         </Badge>
       )
+    },
+  },
+  {
+    accessorKey: "createdAt",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Created At
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    cell: ({ row }) => {
+      const createdAt = row.getValue("createdAt") as Date
+      return <div>{formatDate(createdAt)}</div>
     },
   },
   {

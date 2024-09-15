@@ -16,6 +16,10 @@ interface PaymentConfirmationModalProps {
 }
 
 export function PaymentConfirmationModal({ isOpen, onClose, paymentDetails }: PaymentConfirmationModalProps) {
+  if (!paymentDetails) {
+    return null; // or return a loading state
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
