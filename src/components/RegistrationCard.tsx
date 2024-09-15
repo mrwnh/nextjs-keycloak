@@ -9,7 +9,7 @@ import { Registration, RegistrationStatus, PaymentStatus, TicketType } from '@/l
 import { toast } from '@/hooks/use-toast';
 import { User, Phone, MapPin, Award, Building, Briefcase, CreditCard, DollarSign, Calendar, Edit, AlertCircle } from 'lucide-react';
 import TicketPaymentCTA from '@/components/TicketPaymentCTA';
-import { ticketConfig } from '../app/api/prepare-checkout/route';
+import { ticketConfig } from '@/lib/ticketConfig';
 
 interface RegistrationCardProps {
   registration: Registration;

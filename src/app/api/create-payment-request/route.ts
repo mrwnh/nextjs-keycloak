@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
+import { ticketConfig } from '../../../lib/ticketConfig';
 
 const prisma = new PrismaClient();
 
@@ -11,15 +12,7 @@ const CreatePaymentRequestSchema = z.object({
   ticketType: z.enum(['FULL', 'FREE', 'VVIP', 'VIP', 'PASS', 'ONE_DAY', 'TWO_DAY']),
 });
 
-const ticketConfig = {
-  FULL: { amount: 300, currency: 'EUR' },
-  TWO_DAY: { amount: 200, currency: 'EUR' },
-  ONE_DAY: { amount: 100, currency: 'EUR' },
-  FREE: { amount: 0, currency: 'EUR' },
-  VVIP: { amount: 500, currency: 'EUR' },
-  VIP: { amount: 400, currency: 'EUR' },
-  PASS: { amount: 150, currency: 'EUR' },
-};
+
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);

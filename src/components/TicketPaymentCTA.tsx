@@ -6,6 +6,7 @@ import { Ticket, DollarSign, AlertCircle, Download, QrCode, Receipt } from "luci
 import { useState, useEffect } from 'react';
 import { PaymentConfirmationModal } from './payment-confirmation';
 import { PaymentStatusType } from '@/lib/schemas';
+import { ticketConfig } from '@/lib/ticketConfig';
 
 interface PaymentDetailsBase {
   amount: number;
@@ -26,15 +27,6 @@ interface TicketPaymentProps {
   onDownloadQRCode: () => void;
 }
 
-const ticketConfig = {
-  FULL: { amount: 300, currency: 'EUR' },
-  TWO_DAY: { amount: 200, currency: 'EUR' },
-  ONE_DAY: { amount: 100, currency: 'EUR' },
-  FREE: { amount: 0, currency: 'EUR' },
-  VVIP: { amount: 500, currency: 'EUR' },
-  VIP: { amount: 400, currency: 'EUR' },
-  PASS: { amount: 150, currency: 'EUR' },
-};
 
 declare global {
   interface Window {
