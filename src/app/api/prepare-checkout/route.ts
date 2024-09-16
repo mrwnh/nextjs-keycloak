@@ -1,65 +1,34 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "../../api/auth/[...nextauth]/route";
 import https from 'https';
 import querystring from 'querystring';
-import { TicketType } from '@/lib/schemas';
 import { z } from 'zod';
-import { ticketConfig } from '@/lib/ticketConfig';
-
+import { ticketConfig, getEntityId } from '@/lib/ticketConfig';
 
 const PrepareCheckoutSchema = z.object({
   registrationId: z.string(),
-  ticketType: TicketType.default('FULL'),
+  ticketType: z.enum(['FULL', 'TWO_DAY', 'ONE_DAY', 'FREE', 'VVIP', 'VIP', 'PASS']),
   currency: z.string(),
-  amount: z.number(),
 });
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-
-  if (!session || !session.user) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-  }
-
   try {
     const body = await req.json();
     const { registrationId, ticketType, currency } = PrepareCheckoutSchema.parse(body);
 
     const ticketInfo = ticketConfig[ticketType];
     if (!ticketInfo) {
-      return NextResponse.json({ error: 'Invalid ticket type' }, { status: 400 });
+      throw new Error('Invalid ticket type');
     }
 
-    const { amount } = ticketInfo;
-
-    let entityId;
-    switch (currency) {
-      case 'SAR':
-        entityId = "8acda4ce899a99c00189b5839d8376e8";
-        break;
-      case 'USD':
-        entityId = "8acda4ca902fb4bb01904e2cddf40dea";
-        break;
-      case 'EUR':
-        entityId = "8acda4ca902fb4bb01904e2d42430df1";
-        break;
-      case 'GBP':
-        entityId = "8ac9a4cd90e440510190e4a76f460523";
-        break;
-      default:
-        return NextResponse.json({ error: 'Invalid currency' }, { status: 400 });
-    }
+    const entityId = getEntityId(currency);
+    const amount = ticketInfo.amount.toFixed(2);
 
     const data = querystring.stringify({
       'entityId': entityId,
-      'amount': amount.toFixed(2),
+      'amount': amount,
       'currency': currency,
       'paymentType': 'DB',
       'merchantTransactionId': registrationId,
-      'testMode': 'EXTERNAL',
-      'customParameters[SHOPPER_registration_id]': registrationId,
-      'customParameters[SHOPPER_ticketType]': ticketType
     });
 
     const options = {
@@ -95,15 +64,17 @@ export async function POST(req: Request) {
       postRequest.end();
     });
 
-    console.log('Full response from payment provider:', JSON.stringify(checkoutIdResponse, null, 2));
-
-    if (checkoutIdResponse.result.code !== "000.200.100") {
-      throw new Error(`Failed to get checkoutId from payment provider. Response: ${JSON.stringify(checkoutIdResponse)}`);
+    if (checkoutIdResponse.result && checkoutIdResponse.result.code === "000.200.100") {
+      return NextResponse.json({ 
+        id: checkoutIdResponse.id,
+        amount,
+        currency,
+        entityId,
+        registrationId
+      });
+    } else {
+      throw new Error('Failed to get checkoutId from payment provider');
     }
-
-    const checkoutId = checkoutIdResponse.id;
-
-    return NextResponse.json({ checkoutId, amount, currency, entityId });
   } catch (error: unknown) {
     console.error('Error preparing checkout:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

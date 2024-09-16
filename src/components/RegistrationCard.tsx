@@ -178,8 +178,8 @@ export default function RegistrationCard({ registration: initialRegistration, on
           script.async = true;
           script.onload = () => {
             // The script has loaded, now we can initialize the payment form
-            if (typeof window.paymentWidgets === 'function') {
-              window.paymentWidgets(form);
+            if (typeof (window as any).paymentWidgets === 'function') {
+              (window as any).paymentWidgets(form);
             } else {
               console.error('Payment widget script loaded, but paymentWidgets function not found');
               toast({
@@ -289,7 +289,7 @@ export default function RegistrationCard({ registration: initialRegistration, on
       </Card>
       <TicketPaymentCTA
                   ticketType={currentRegistration.payment?.ticketType || null}
-                  amount={currentRegistration.payment?.amount || 100}
+                  amount={currentRegistration.payment?.amount || "100"}
                   currency={currentRegistration.payment?.currency || 'EUR'}
                   paymentStatus={currentRegistration.payment?.status || 'UNPAID'}
                   registrationStatus={currentRegistration.status}
