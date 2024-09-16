@@ -1,15 +1,26 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSession } from "next-auth/react"
 import { useRouter } from 'next/navigation'
 import { columns } from "./columns"
 import { DataTable } from "./data-table"
 import { useToast } from "@/hooks/use-toast"
 import { Slideover } from "@/components/Slideover"
-import { Registration } from "@/lib/schemas";
+import { Registration } from "@/lib/schemas"
 import { ColumnDef } from '@tanstack/react-table'
-
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog"
+import { RegistrationForm, FormData } from "@/components/AdminForm"
 
 export default function AdminRegistrations() {
   const { data: session, status } = useSession()
@@ -19,6 +30,8 @@ export default function AdminRegistrations() {
   const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null)
   const [slideoverOpen, setSlideoverOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
 
   const handleStatusUpdate = useCallback(async (id: string, action: string) => {
     setIsLoading(true);
@@ -170,6 +183,42 @@ export default function AdminRegistrations() {
     }
   }, [toast]);
 
+  const handleNewRegistration = async (data: FormData) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        const newRegistration = await response.json();
+        setRegistrations(prev => [...prev, newRegistration]);
+        toast({
+          title: "Success",
+          description: "New registration added successfully",
+        });
+        setIsModalOpen(false);
+        fetchRegistrations(); // Refresh the registrations list
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add new registration');
+      }
+    } catch (error) {
+      console.error('Error adding new registration:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to add new registration",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push('/admin/login');
@@ -224,8 +273,44 @@ export default function AdminRegistrations() {
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-2xl font-bold mb-4">All Registrations</h1>
-      <DataTable columns={columns as ColumnDef<Registration, unknown>[]} data={registrations} onBulkAction={handleBulkAction} />
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">All Registrations</h1>
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogTrigger asChild>
+            <Button>Add New Registration</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Add New Registration</DialogTitle>
+              <DialogDescription>
+                Fill in the details to add a new registration. Click submit when you&apos;re done.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[60vh] overflow-y-auto py-4">
+              <RegistrationForm onSubmit={handleNewRegistration} ref={formRef} />
+            </div>
+            <DialogFooter className="sm:justify-end">
+              <DialogClose asChild>
+                <Button type="button" variant="secondary">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button 
+                type="submit" 
+                onClick={() => formRef.current?.requestSubmit()}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Submitting...' : 'Submit'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <DataTable 
+        columns={columns as ColumnDef<Registration, unknown>[]} 
+        data={registrations} 
+        onBulkAction={handleBulkAction} 
+      />
       <Slideover 
         isOpen={slideoverOpen} 
         onClose={() => setSlideoverOpen(false)}

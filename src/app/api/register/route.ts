@@ -38,11 +38,11 @@ export async function POST(req: Request) {
     const registration = await prisma.registration.create({
       data: {
         ...validatedData,
-        status: 'PENDING',
+        status: RegistrationStatus.enum.PENDING,
         qrCodeUrl,
         payment: {
           create: {
-            status: 'UNPAID',
+            status: PaymentStatus.enum.UNPAID,
           }
         },
       },

@@ -5,11 +5,10 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RegistrationForm } from '@/components/form';
-import { Registration, RegistrationStatus, PaymentStatus, TicketType } from '@/lib/schemas';
+import { Registration, RegistrationStatus } from '@/lib/schemas';
 import { toast } from '@/hooks/use-toast';
 import { User, Phone, MapPin, Award, Building, Briefcase, CreditCard, DollarSign, Calendar, Edit, AlertCircle } from 'lucide-react';
 import TicketPaymentCTA from '@/components/TicketPaymentCTA';
-import { ticketConfig } from '@/lib/ticketConfig';
 
 interface RegistrationCardProps {
   registration: Registration;
