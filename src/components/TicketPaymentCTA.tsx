@@ -23,7 +23,7 @@ export default function TicketPaymentCTA({
   registrationId,
   onDownloadReceipt,
   onDownloadTicket,
-  onDownloadQRCode
+  onDownloadQRCode,
 }: TicketPaymentProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [checkoutId, setCheckoutId] = useState<string | null>(null);

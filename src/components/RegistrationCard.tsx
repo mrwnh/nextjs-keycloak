@@ -138,72 +138,6 @@ export default function RegistrationCard({ registration: initialRegistration, on
     </motion.div>
   );
 
-  const handlePayNow = async () => {
-    try {
-      const ticketType = currentRegistration.payment?.ticketType || 'FULL';
-      const currency = currentRegistration.payment?.currency || 'EUR';
-      const response = await fetch('/api/prepare-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          registrationId: currentRegistration.id, 
-          ticketType,
-          currency,
-          amount: currentRegistration.payment?.amount || ticketConfig[ticketType].amount
-        }),
-      });
-      const data = await response.json();
-      if (data.checkoutId) {
-        // Define wpwlOptions before loading the script
-        (window as any).wpwlOptions = {
-          style: "card",
-          locale: "en"
-        };
-
-        // Create a form for the payment widget
-        const form = document.createElement('form');
-        form.action = `${process.env.NEXT_PUBLIC_URL}/api/payment-result`;
-        form.className = "paymentWidgets";
-        form.setAttribute('data-brands', "VISA MASTER AMEX APPLE");
-
-        // Replace the current content with the payment form
-        const container = document.getElementById('payment-form-container');
-        if (container) {
-          container.innerHTML = '';
-          container.appendChild(form);
-
-          // Load the payment widget script
-          const script = document.createElement('script');
-          script.src = `https://eu-test.oppwa.com/v1/paymentWidgets.js?checkoutId=${data.checkoutId}`;
-          script.async = true;
-          script.onload = () => {
-            // The script has loaded, now we can initialize the payment form
-            if (typeof (window as any).paymentWidgets === 'function') {
-              (window as any).paymentWidgets(form);
-            } else {
-              console.error('Payment widget script loaded, but paymentWidgets function not found');
-              toast({
-                title: "Error",
-                description: "An error occurred while loading the payment form. Please try again later.",
-                variant: "destructive",
-              });
-            }
-          };
-          document.body.appendChild(script);
-        }
-      } else {
-        throw new Error('Failed to prepare checkout');
-      }
-    } catch (error) {
-      console.error('Error initiating payment:', error);
-      toast({
-        title: "Payment Error",
-        description: "Failed to initiate payment process",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <>
       <Card className="w-full mx-auto shadow-xl border-[#66cada] border-t-4 overflow-hidden bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
@@ -288,18 +222,12 @@ export default function RegistrationCard({ registration: initialRegistration, on
         </CardContent>
       </Card>
       <TicketPaymentCTA
-                  ticketType={currentRegistration.payment?.ticketType || null}
-                  amount={currentRegistration.payment?.amount || "100"}
-                  currency={currentRegistration.payment?.currency || 'EUR'}
-                  paymentStatus={currentRegistration.payment?.status || 'UNPAID'}
-                  registrationStatus={currentRegistration.status}
-                  registrationId={currentRegistration.id}
-                  onPayNow={handlePayNow}
-                  onDownloadReceipt={() => {/* Implement receipt download */}}
-                  onDownloadTicket={() => {/* Implement ticket download */}}
-                  onDownloadQRCode={() => {/* Implement QR code download */}}
-                />
-                <div id="payment-form-container" className="mt-4"></div>
+        ticketType={currentRegistration.payment?.ticketType || null}
+        registrationStatus={currentRegistration.status}
+        registrationId={currentRegistration.id}
+        onDownloadReceipt={() => { } }
+        onDownloadTicket={() => { } }
+        onDownloadQRCode={() => { } } paymentStatus={'UNPAID'}                />
     </>
   );
 }

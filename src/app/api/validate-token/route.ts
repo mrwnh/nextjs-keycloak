@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { authOptions } from "../api/auth/[...nextauth]/route";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function POST(req: Request) {
   const { token } = await req.json();

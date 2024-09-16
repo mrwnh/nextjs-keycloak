@@ -172,11 +172,11 @@ export default function AdminRegistrations() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push('/api/auth/signin?callbackUrl=/admin/registrations')
+      router.push('/admin/login');
     } else if (status === "authenticated" && session?.user) {
-      fetchRegistrations()
+      fetchRegistrations();
     }
-  }, [status, session, router, fetchRegistrations])
+  }, [status, session, router, fetchRegistrations]);
 
   const handleBulkAction = async (action: string, selectedRows: Registration[]) => {
     setIsLoading(true)
