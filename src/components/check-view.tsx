@@ -142,9 +142,9 @@ export default function CheckView({ registration: initialRegistration }: { regis
   const getTicketTypeColor = (ticketType: string | null) => {
     switch (ticketType) {
       case 'VIP': return 'bg-purple-100 text-purple-800 border-purple-300'
-      case 'EARLY_BIRD': return 'bg-blue-100 text-blue-800 border-blue-300'
-      case 'REGULAR': return 'bg-green-100 text-green-800 border-green-300'
-      case 'STUDENT': return 'bg-yellow-100 text-yellow-800 border-yellow-300'
+      case 'VVIP': return 'bg-blue-100 text-blue-800 border-blue-300'
+      case 'VISITOR': return 'bg-green-100 text-green-800 border-green-300'
+      case 'MEDIA': return 'bg-yellow-100 text-yellow-800 border-yellow-300'
       default: return 'bg-gray-100 text-gray-800 border-gray-300'
     }
   }
@@ -164,8 +164,8 @@ export default function CheckView({ registration: initialRegistration }: { regis
           )}
 
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
+            <CardContent className="pt-6 relative">
+              <div className="flex  items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <Avatar className="h-24 w-24">
                     <AvatarImage src={registration.imageUrl ?? ''} alt={`${registration.firstName} ${registration.lastName}`} />
@@ -202,7 +202,7 @@ export default function CheckView({ registration: initialRegistration }: { regis
                     </div>
                   </div>
                 </div>
-                <div className={`text-1xl font-bold p-2 rounded-lg border-4 ${getTicketTypeColor(registration.registrationType ?? null)}`}>
+                <div className={`absolute top-2 right-2 text-sm font-bold px-1 py-1 rounded-sm ${getTicketTypeColor(registration.registrationType ?? null)}`}>
                   {registration.registrationType || 'N/A'}
                 </div>
               </div>
@@ -302,30 +302,50 @@ export default function CheckView({ registration: initialRegistration }: { regis
             </Button>
           )}
           <div className="flex space-x-2 w-2/3">
-            <Button 
-              onClick={() => handleCheckIn()}
-              disabled={isLoading || !canCheckIn}
-              className="flex-grow h-12 text-lg"
-            >
-              {isLoading ? (
-                <span className="flex items-center justify-center">
-                  <span className="animate-spin mr-2 h-5 w-5 border-2 border-current border-t-transparent rounded-full"></span>
-                  Processing...
-                </span>
-              ) : (
-                <>
-                  <CheckCircle className="mr-2 h-5 w-5" />
-                  Check In
-                </>
-              )}
-            </Button>
-            {!canCheckIn && (
+            {isCheckedInToday ? (
+              <Button 
+                disabled
+                className="flex-grow h-12 text-lg"
+              >
+                <CheckCircle className="mr-2 h-5 w-5" />
+                Already Checked In
+              </Button>
+            ) : registration.payment?.status === 'UNPAID' ? (
               <Button 
                 onClick={() => handleCheckIn(true)}
                 variant="destructive"
-                className="h-12 text-lg"
+                className="flex-grow h-12 text-lg"
+                disabled={isLoading}
               >
-                Check In Anyway
+                {isLoading ? (
+                  <span className="flex items-center justify-center">
+                    <span className="animate-spin mr-2 h-5 w-5 border-2 border-current border-t-transparent rounded-full"></span>
+                    Processing...
+                  </span>
+                ) : (
+                  <>
+                    <CheckCircle className="mr-2 h-5 w-5" />
+                    Check In Anyway
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button 
+                onClick={() => handleCheckIn()}
+                disabled={isLoading || !canCheckIn}
+                className="flex-grow h-12 text-lg"
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center">
+                    <span className="animate-spin mr-2 h-5 w-5 border-2 border-current border-t-transparent rounded-full"></span>
+                    Processing...
+                  </span>
+                ) : (
+                  <>
+                    <CheckCircle className="mr-2 h-5 w-5" />
+                    Check In
+                  </>
+                )}
               </Button>
             )}
           </div>

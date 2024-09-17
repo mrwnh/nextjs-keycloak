@@ -69,7 +69,6 @@ model User {
   name     String
   email    String    @unique
   comments Comment[]
-  checkIns CheckIn[]
 }
 
 model PaymentStatusHistory {
@@ -86,7 +85,6 @@ model CheckIn {
   registration   Registration @relation(fields: [registrationId], references: [id])
   checkedInAt    DateTime     @default(now())
   checkedInBy    String
-  user           User         @relation(fields: [checkedInBy], references: [id])
 
   @@unique([registrationId, checkedInAt])
 }

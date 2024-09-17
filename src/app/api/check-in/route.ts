@@ -12,18 +12,10 @@ export async function POST(request: NextRequest) {
 
   const { registrationId, userEmail } = await request.json()
   try {
-    const user = await prisma.user.findUnique({
-      where: { email: userEmail },
-    })
-
-    if (!user) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 })
-    }
-
     const checkIn = await prisma.checkIn.create({
       data: {
         registrationId,
-        checkedInBy: user.id,
+        checkedInBy: userEmail,
       },
     })
 
