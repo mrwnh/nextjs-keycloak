@@ -54,7 +54,6 @@ export type Registration = RegistrationInput & {
   updatedAt: Date;
   payment?: Payment | null;
   comments?: Comment[];
-  statusHistory?: RegistrationStatusHistory[];
 };
 
 export type Payment = PaymentInput & {

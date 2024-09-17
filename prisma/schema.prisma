@@ -33,6 +33,7 @@ model Registration {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   payment           Payment?
+  checkIns          CheckIn[]
 
   @@index([email])
 }
@@ -68,6 +69,7 @@ model User {
   name     String
   email    String    @unique
   comments Comment[]
+  checkIns CheckIn[]
 }
 
 model PaymentStatusHistory {
@@ -76,6 +78,17 @@ model PaymentStatusHistory {
   paymentId  String
   status     PaymentStatus
   changedAt  DateTime      @default(now())
+}
+
+model CheckIn {
+  id             String       @id @default(cuid())
+  registrationId String
+  registration   Registration @relation(fields: [registrationId], references: [id])
+  checkedInAt    DateTime     @default(now())
+  checkedInBy    String
+  user           User         @relation(fields: [checkedInBy], references: [id])
+
+  @@unique([registrationId, checkedInAt])
 }
 
 enum PaymentStatus {

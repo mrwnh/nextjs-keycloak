@@ -24,11 +24,20 @@ export async function POST(req: Request) {
 
     let qrCodeUrl = null;
 
-    // Generate QR code
-    const qrCodeBuffer = await QRCode.toBuffer(`${process.env.NEXTAUTH_URL}/registration/${session.user.email}/view`);
+    // Fetch user from database to get the ID
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email as string },
+    });
 
-    // Upload QR code to Vercel Blob
-    const { url } = await put(`qr-codes/${session.user.email}.png`, qrCodeBuffer, {
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Generate QR code with user ID
+    const qrCodeBuffer = await QRCode.toBuffer(`${process.env.NEXTAUTH_URL}/registration/${user.id}/view`);
+
+    // Upload QR code to Vercel Blob using user ID
+    const { url } = await put(`qr-codes/${user.id}.png`, qrCodeBuffer, {
       access: 'public',
       token: process.env.BLOB_READ_WRITE_TOKEN as string,
     });
