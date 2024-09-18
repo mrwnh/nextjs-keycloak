@@ -24,13 +24,19 @@ export async function POST(req: Request) {
 
     let qrCodeUrl = null;
 
-    // Fetch user from database to get the ID
-    const user = await prisma.user.findUnique({
+    // Fetch user from database or create a new one if not found
+    let user = await prisma.user.findUnique({
       where: { email: session.user.email as string },
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      user = await prisma.user.create({
+        data: {
+          email: session.user.email as string,
+          name: session.user.name || '',
+          role: 'MEMBER',
+        },
+      });
     }
 
     // Generate QR code with user ID

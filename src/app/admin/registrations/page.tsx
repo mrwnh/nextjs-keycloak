@@ -82,7 +82,8 @@ export default function AdminRegistrations() {
             setSelectedRegistration(registration)
             setSlideoverOpen(true)
           },
-          onStatusUpdate: (action: string) => handleStatusUpdate(reg.id, action)
+          onStatusUpdate: (action: string) => handleStatusUpdate(reg.id, action),
+          onDelete: (id: string) => handleDelete(id)
         }))
         setRegistrations(registrationsWithHandlers)
       } else {
@@ -230,27 +231,36 @@ export default function AdminRegistrations() {
   const handleBulkAction = async (action: string, selectedRows: Registration[]) => {
     setIsLoading(true)
     try {
-      const promises = selectedRows.map(row => 
-        fetch('/api/admin/update-registration-status', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ id: row.id, status: action }),
-        })
-      )
-      
-      const results = await Promise.all(promises)
-      const allSuccessful = results.every(response => response.ok)
-
-      if (allSuccessful) {
+      if (action === "delete") {
+        const promises = selectedRows.map(row => handleDelete(row.id))
+        await Promise.all(promises)
         toast({
           title: "Success",
-          description: `Bulk action '${action}' completed successfully`,
+          description: "Selected registrations deleted successfully",
         })
-        fetchRegistrations() // Refresh the data
       } else {
-        throw new Error('Failed to perform bulk action')
+        const promises = selectedRows.map(row => 
+          fetch('/api/admin/update-registration-status', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ id: row.id, status: action }),
+          })
+        )
+        
+        const results = await Promise.all(promises)
+        const allSuccessful = results.every(response => response.ok)
+
+        if (allSuccessful) {
+          toast({
+            title: "Success",
+            description: `Bulk action '${action}' completed successfully`,
+          })
+          fetchRegistrations() // Refresh the data
+        } else {
+          throw new Error('Failed to perform bulk action')
+        }
       }
     } catch (error) {
       toast({
@@ -262,6 +272,35 @@ export default function AdminRegistrations() {
       setIsLoading(false)
     }
   }
+
+  const handleDelete = useCallback(async (id: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/admin/delete-registration', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete registration');
+      }
+      setRegistrations(prev => prev.filter(reg => reg.id !== id));
+      toast({
+        title: "Success",
+        description: "Registration deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting registration:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete registration",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
 
   if (status === "loading") {
     return <div>Loading...</div>

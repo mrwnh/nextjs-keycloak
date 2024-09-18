@@ -69,6 +69,7 @@ model User {
   name     String
   email    String    @unique
   comments Comment[]
+  role     Role      @default(MEMBER)
 }
 
 model PaymentStatusHistory {
@@ -110,4 +111,9 @@ enum TicketType {
   PASS
   ONE_DAY
   TWO_DAY
+}
+
+enum Role {
+  ADMIN
+  MEMBER
 }
